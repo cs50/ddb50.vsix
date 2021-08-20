@@ -1,0 +1,96 @@
+html {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+    overflow: hidden;
+    padding: 0;
+}
+
+#ddbChatContainer {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+#ddbChatText {
+    overflow: auto;
+}
+
+body.vscode-light #ddbChatText p {
+    border-bottom: 1px solid #e0e0e0;
+}
+
+body.vscode-dark #ddbChatText p {
+    border-bottom: 1px solid #1d1d1d;
+}
+
+#ddbChatText p {
+    margin: 0px;
+    padding: 10px;
+    position: relative;
+    word-wrap: break-word;
+}
+
+.ddbAuthorName {
+    display: block;
+}
+
+.ddbChatMessage {
+    display: block;
+}
+
+.ddbChatBorder {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+}
+
+body.vscode-dark .ddbChatBorder-Duck {
+    border-left: 3px solid #ffd45a;
+}
+
+body.vscode-dark .ddbChatBorder-User {
+    border-left: 3px solid #d2e3fc;
+}
+
+body.vscode-light .ddbChatBorder-Duck {
+    border-left: 3px solid #e0b63f;
+}
+
+body.vscode-light .ddbChatBorder-User {
+    border-left: 3px solid #9abced;
+}
+
+#ddbInput {
+    height: 55px;
+    margin-top: auto;
+    padding: 5px;
+}
+  
+#ddbInput textarea {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-family: sans-serif;
+    height: 100%;
+    width: 100%;
+    resize: none;
+}
+
+body.vscode-dark #ddbInput textarea {
+    border-top: 2px solid #1d1d1d;
+}
+
+body.vscode-light #ddbInput textarea {
+    border-top: 2px solid #e0e0e0;
+
+}
+
+#ddbInput textarea:focus {
+    outline: none;
+}
