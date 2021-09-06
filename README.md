@@ -1,6 +1,6 @@
-# ddb50
+# README
 
 ```
-sudo npm install -g typescript vsce
-vsce package
+npm install
+./node_modules/vsce/out/vsce package
 ```
