@@ -3,6 +3,7 @@
   "displayName": "ddb50",
   "description": "",
   "publisher": "CS50",
+	"repository": "https://github.com/cs50/ddb50.vsix",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.59.0"
