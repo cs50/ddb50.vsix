@@ -19,7 +19,7 @@
       "ddb50": [
         {
           "id": "ddb50.debugView",
-          "name": "ddb50",
+          "name": "CS50 Duck Debugger",
           "type": "webview"
         }
       ]
@@ -28,7 +28,7 @@
       "activitybar": [
         {
           "id": "ddb50",
-          "title": "ddb50",
+          "title": "CS50 Duck Debugger",
           "icon": "resources/ddb.svg"
         }
       ]
