@@ -1,0 +1,17 @@
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-deploy depdendent
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.DEPLOY50_PAT }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'cs50',
+              repo: 'codespace',
+              workflow_id: 'main.yml',
+              ref: 'main'
+            });
