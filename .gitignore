@@ -1,8 +1,9 @@
 .*
 !/.github/
+!/.eslintrc.js
+!/.vscodeignore
 !.gitignore
-out
-dist
-node_modules
-.vscode-test/
+
 *.vsix
+out
+node_modules/
