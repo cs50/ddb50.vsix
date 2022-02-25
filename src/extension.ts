@@ -3,12 +3,11 @@ import * as vscode from 'vscode';
 export function activate(context: vscode.ExtensionContext) {
 	const provider = new DDBViewProvider(context.extensionUri);
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(DDBViewProvider.viewType, provider));
+		vscode.window.registerWebviewViewProvider(DDBViewProvider.viewId, provider));
 }
 
 class DDBViewProvider implements vscode.WebviewViewProvider {
-	public static readonly viewType = 'ddb50.debugView';
-	private _view?: vscode.WebviewView;
+	public static readonly viewId = 'ddb50.debugView';
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -19,7 +18,6 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
 		_context: vscode.WebviewViewResolveContext,
 		_token: vscode.CancellationToken,
 	) {
-		this._view = webviewView;
 		webviewView.webview.options = {
 			enableScripts: true,
 			localResourceRoots: [this._extensionUri]
