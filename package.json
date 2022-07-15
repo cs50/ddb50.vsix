@@ -1,8 +1,8 @@
 {
   "name": "ddb50",
   "displayName": "ddb50",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Provide everyone with their own virtual duck on VS Code. Introduce students to rubber duck debugging, a technique that involves talking to a rubber duck (or any inanimate, or even animate object) about a bug in their code.",
+  "version": "1.0.0",
   "publisher": "CS50",
 	"repository": "https://github.com/cs50/ddb50.vsix",
   "engines": {
