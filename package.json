@@ -3,14 +3,14 @@
   "displayName": "CS50 Duck Debugger",
   "description": "Provide everyone with their own virtual duck on VS Code. Introduce students to rubber duck debugging, a technique that involves talking to a rubber duck (or any inanimate, or even animate object) about a bug in their code.",
   "icon": "images/ddb50.png",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "CS50",
 	"repository": "https://github.com/cs50/ddb50.vsix",
   "engines": {
     "vscode": "^1.59.0"
   },
   "categories": [
-    "Other"
+    "Education"
   ],
   "activationEvents": [
     "onView:ddb50.debugView"
