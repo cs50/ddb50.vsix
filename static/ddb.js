@@ -1,6 +1,22 @@
 let firstMsg = true;
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  // Preserve chat for a single session
+  if (localStorage.getItem('msgHistory') === null) {
+    localStorage.setItem('msgHistory', JSON.stringify([]));
+  } else {
+    try {
+      const msgHistory = JSON.parse(localStorage.getItem('msgHistory'));
+      msgHistory.map((each) => {
+        addMessage({text: each.text, fromDuck: each.fromDuck}, false);
+      });
+    } catch (e) {
+      console.log('ddb50: failed to restore chat history');
+      console.log(e);
+    }
+  }
+
   const textarea = document.querySelector('#ddbInput textarea');
   textarea.focus();
   textarea.addEventListener('keypress', (event) => {
@@ -13,7 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-function addMessage({text, fromDuck}) {
+function saveMessage({text, fromDuck}) {
+  let messages = JSON.parse(localStorage.getItem('msgHistory'));
+  messages.push({
+    text: text,
+    fromDuck: fromDuck
+  });
+  localStorage.setItem('msgHistory', JSON.stringify(messages));
+}
+
+function addMessage({text, fromDuck}, saveMsg=true) {
   const chatElt = document.createElement('p');
   chatElt.className = 'ddbChat';
 
@@ -34,7 +59,12 @@ function addMessage({text, fromDuck}) {
   const chatText = document.querySelector('#ddbChatText');
   chatText.appendChild(chatElt);
   chatText.scrollTop = chatText.scrollHeight;
+
+  if (saveMsg) {
+    saveMessage({text: text, fromDuck: fromDuck});
+  }
 }
+
 
 function reply(prevMsg) {
   let reply = "quack ".repeat(1 + getRandomInt(3)).trim();
