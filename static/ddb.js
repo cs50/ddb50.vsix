@@ -21,10 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
   textarea.focus();
   textarea.addEventListener('keypress', (event) => {
     if (event.key === 'Enter' && event.target.value) {
-      addMessage({text: event.target.value});
-      event.preventDefault();
-      reply(event.target.value);
-      event.target.value = '';
+      if (event.target.value == "/ddb clear") {
+        clearChatHistory();
+      }
+      else{
+        addMessage({text: event.target.value});
+        event.preventDefault();
+        reply(event.target.value);
+        event.target.value = '';
+      }
     }
   });
 });
@@ -65,6 +70,11 @@ function addMessage({text, fromDuck}, saveMsg=true) {
   }
 }
 
+function clearChatHistory() {
+  const chatText = document.querySelector('#ddbChatText');
+  chatText.innerHTML = '';
+  localStorage.setItem('msgHistory', JSON.stringify([]));
+}
 
 function reply(prevMsg) {
   let reply = "quack ".repeat(1 + getRandomInt(3)).trim();
