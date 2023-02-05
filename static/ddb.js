@@ -2,6 +2,15 @@ let firstMsg = true;
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    window.addEventListener('message', event => {
+        const message = event.data;
+        switch (message.command) {
+            case 'clearMessages':
+                clearMessages();
+                break;
+        }
+    });
+
   // Preserve chat for a single session
   if (localStorage.getItem('msgHistory') === null) {
     localStorage.setItem('msgHistory', JSON.stringify([]));
@@ -21,10 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
   textarea.focus();
   textarea.addEventListener('keypress', (event) => {
     if (event.key === 'Enter' && event.target.value) {
-      addMessage({text: event.target.value});
-      event.preventDefault();
-      reply(event.target.value);
-      event.target.value = '';
+        addMessage({text: event.target.value});
+        event.preventDefault();
+        reply(event.target.value);
+        event.target.value = '';
     }
   });
 });
@@ -65,6 +74,10 @@ function addMessage({text, fromDuck}, saveMsg=true) {
   }
 }
 
+function clearMessages() {
+    document.querySelector('#ddbChatText').innerHTML = '';
+    localStorage.setItem('msgHistory', JSON.stringify([]));
+  }
 
 function reply(prevMsg) {
   let reply = "quack ".repeat(1 + getRandomInt(3)).trim();
