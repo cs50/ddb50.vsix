@@ -3,11 +3,11 @@
     "displayName": "CS50 Duck Debugger",
     "description": "Provide everyone with their own virtual duck in VS Code. Introduce students to rubber duck debugging, a technique that involves talking to a rubber duck (or any inanimate, or even animate object) about a bug in their code.",
     "icon": "images/ddb50.png",
-    "version": "1.1.1",
+    "version": "2.0.0",
     "publisher": "CS50",
     "repository": "https://github.com/cs50/ddb50.vsix",
     "engines": {
-        "vscode": "^1.77.0"
+        "vscode": "^1.79.0"
     },
     "categories": [
         "Education"
@@ -63,14 +63,14 @@
     "devDependencies": {
         "@types/glob": "^8.1.0",
         "@types/mocha": "^10.0.1",
-        "@types/node": "18.x",
-        "@types/vscode": "^1.77.0",
-        "@typescript-eslint/eslint-plugin": "^5.58.0",
-        "@typescript-eslint/parser": "^5.58.0",
-        "eslint": "^8.38.0",
-        "glob": "^10.0.0",
+        "@types/node": "20.x",
+        "@types/vscode": "^1.79.0",
+        "@typescript-eslint/eslint-plugin": "^5.59.11",
+        "@typescript-eslint/parser": "^5.59.11",
+        "eslint": "^8.42.0",
+        "glob": "^10.2.7",
         "mocha": "^10.2.0",
-        "typescript": "^5.0.4",
+        "typescript": "^5.1.3",
         "vscode-test": "^1.5.2"
     }
 }
