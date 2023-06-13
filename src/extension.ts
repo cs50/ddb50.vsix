@@ -1,7 +1,16 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import * as vscode from 'vscode';
+const axios = require('axios').default;
+const https = require('https');
+const highlightjs = require('markdown-it-highlightjs');
+const md = require('markdown-it')();
+md.use(highlightjs);
+
+let githubUserId: any = '';
 
 export function activate(context: vscode.ExtensionContext) {
-    const provider = new DDBViewProvider(context.extensionUri);
+    const provider = new DDBViewProvider(context.extensionUri, context);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(DDBViewProvider.viewId, provider));
 
@@ -11,6 +20,22 @@ export function activate(context: vscode.ExtensionContext) {
             provider.webViewGlobal?.webview.postMessage({ command: 'clearMessages' });
         })
     );
+
+    getUserId().then((id: string) => {
+        githubUserId = id;
+    });
+}
+
+async function getUserId() {
+    const url = 'https://api.github.com/user';
+    const headers = {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': `Bearer ${process.env['GITHUB_TOKEN']}`,
+        'X-GitHub-Api-Version': '2022-11-28'
+    };
+    return await axios.get(url, { headers: headers }).then((response: any) => {
+        return response.data.id;
+    });
 }
 
 class DDBViewProvider implements vscode.WebviewViewProvider {
@@ -19,6 +44,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
 
     constructor(
         private readonly _extensionUri: vscode.Uri,
+        private readonly context: vscode.ExtensionContext,
     ) { }
 
     public resolveWebviewView(
@@ -30,8 +56,64 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
             enableScripts: true,
             localResourceRoots: [this._extensionUri]
         };
+        webviewView.webview.onDidReceiveMessage(
+            message => {
+                switch (message.command) {
+                    case 'get_gpt_response':
+                        this.getGptResponse(message.id, message.content);
+                        return;
+                }
+            },
+            undefined,
+            this.context.subscriptions
+        );
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
         this.webViewGlobal = webviewView;
+    }
+
+    private getGptResponse(id: string, content: string) {
+        try {
+            const postData = JSON.stringify({
+                'message': content,
+                'stream': true,
+                'user': {
+                    'id': githubUserId,
+                    'login': process.env['GITHUB_USER']
+                }
+            });
+
+            const postOptions = {
+                method: 'POST',
+                host: 'cs50.ai',
+                port: 443,
+                path: '/ddb50',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            const postRequest = https.request(postOptions, (res: any) => {
+                let buffers: string = '';
+                res.on('data', (chunk: any) => {
+                    buffers += chunk;
+                    this.webviewDeltaUpdate(id, buffers);
+                });
+            });
+
+            postRequest.write(postData);
+            postRequest.end();
+        } catch (error: any) {
+            console.log(error);
+        }
+    }
+
+    private webviewDeltaUpdate(id: string, content: string) {
+        this.webViewGlobal!.webview.postMessage(
+            {
+                command: 'delta_update',
+                id: id,
+                content: md.render(content)
+            });
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
