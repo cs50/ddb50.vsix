@@ -8,6 +8,7 @@ const md = require('markdown-it')();
 md.use(highlightjs);
 
 let githubUserId: any = '';
+let messages_array: any = [];
 
 export function activate(context: vscode.ExtensionContext) {
     const provider = new DDBViewProvider(context.extensionUri, context);
@@ -18,6 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.clearMessages', () => {
             provider.webViewGlobal?.webview.postMessage({ command: 'clearMessages' });
+            messages_array = [];
         })
     );
 
@@ -73,8 +75,14 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
 
     private getGptResponse(id: string, content: string) {
         try {
+
+            messages_array.push({
+                role: 'user',
+                content: content
+            });
+
             const postData = JSON.stringify({
-                'message': content,
+                'messages': messages_array,
                 'stream': true,
                 'user': {
                     'id': githubUserId,
@@ -86,7 +94,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 method: 'POST',
                 host: 'cs50.ai',
                 port: 443,
-                path: '/ddb50',
+                path: '/api/ddb50',
                 headers: {
                     'Content-Type': 'application/json'
                 }
@@ -97,6 +105,13 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 res.on('data', (chunk: any) => {
                     buffers += chunk;
                     this.webviewDeltaUpdate(id, buffers);
+                });
+
+                res.on('end', () => {
+                    messages_array.push({
+                        role: 'assistant',
+                        content: buffers
+                    });
                 });
             });
 

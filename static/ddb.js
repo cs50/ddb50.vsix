@@ -27,10 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function addMessage({ id, text, fromDuck }, saveMsg = true) {
 
         const message =
-            `<p class="ddbChat">
+            `<p class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
                 <span class="ddbChatBorder ${fromDuck ? 'ddbChatBorder-Duck' : 'ddbChatBorder-User'}"></span>
                 <span class="ddbAuthorName"><b>${(fromDuck ? 'ddb' : 'you')}</b></span>
-                <span id="id-${id}" class="ddbChatMessage">${fromDuck ? '' : text}</span>
+                <span id="id-${id}" class="ddbChatMessage">${fromDuck ? '...' : text}</span>
             </p>`;
 
         const parser = new DOMParser();
