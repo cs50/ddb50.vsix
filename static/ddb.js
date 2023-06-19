@@ -73,19 +73,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function restoreMessages() {
-        textarea.setAttribute('disabled', 'disabled');
-        const msgHistory = JSON.parse(localStorage.getItem('msgHistory'));
-        if (msgHistory) {
-            msgHistory.forEach(msg => {
-                addMessage({ id: uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, true);
+        try {
+            textarea.setAttribute('disabled', 'disabled');
+            const msgHistory = JSON.parse(localStorage.getItem('msgHistory'));
+            if (msgHistory) {
+                msgHistory.forEach(msg => {
+                    addMessage({ id: uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, true);
+                });
+            }
+            vscode.postMessage({
+                command: 'restore_messages',
+                content: msgHistory
             });
+        } catch (error) {
+            clearMessages();
+            console.error(error);
+        } finally {
+            textarea.removeAttribute('disabled');
+            textarea.focus();
         }
-        vscode.postMessage({
-            command: 'restore_messages',
-            content: msgHistory
-        });
-        textarea.removeAttribute('disabled');
-        textarea.focus();
     }
 
     function uuidv4() {
