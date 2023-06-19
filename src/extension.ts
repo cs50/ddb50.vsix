@@ -112,6 +112,10 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                         role: 'assistant',
                         content: buffers
                     });
+                    this.webViewGlobal!.webview.postMessage(
+                        {
+                            command: 'enable_input',
+                        });
                 });
             });
 
@@ -132,17 +136,45 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
+
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'static', 'ddb.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'static', 'style.css'));
+        const highlightjsUri = webview.asWebviewUri(
+        vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/highlight.min.js`));
+        let highlightStyleUri: vscode.Uri;
+        let codeStyleUri: vscode.Uri;
+
+        let lightTheme = [vscode.ColorThemeKind.Light, vscode.ColorThemeKind.HighContrastLight];
+        const isLightTheme = lightTheme.includes(vscode.window.activeColorTheme.kind);
+        if (isLightTheme) {
+            codeStyleUri = webview.asWebviewUri(
+                vscode.Uri.joinPath(this._extensionUri, `static/css/light.css`
+            ));
+            highlightStyleUri = webview.asWebviewUri(
+                vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github.min.css`));
+        } else {
+            codeStyleUri = webview.asWebviewUri(
+                vscode.Uri.joinPath(this._extensionUri, `static/css/dark.css`
+            ));
+            highlightStyleUri = webview.asWebviewUri(
+                vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github-dark.min.css`));
+        }
+
+        // Get font size from vscode settings
+        let fontSize: number | undefined = vscode.workspace.getConfiguration().get('editor.fontSize');
+        fontSize !== undefined ? fontSize : 12;
+
         return `
             <!DOCTYPE html>
             <html lang="en">
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="initial-scale=1.0, width=device-width">
+                    <link href="${highlightStyleUri}" rel="stylesheet">
+                    <link href="${codeStyleUri}" rel="stylesheet">
                     <link href="${styleUri}" rel="stylesheet">
-                    <script src="${scriptUri}"></script>
                     <title>ddb50</title>
+                    <style>body { font-size: ${fontSize}px; }</style>
                 </head>
                 <body>
                     <div id="ddbChatContainer">
@@ -150,6 +182,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                         <div id="ddbInput"><textarea placeholder="Message ddb"></textarea></div>
                     </div>
                 </body>
+                <script src="${highlightjsUri}"></script>
+                <script src="${scriptUri}"></script>
             </html>
         `;
     }

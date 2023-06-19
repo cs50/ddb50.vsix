@@ -1,0 +1,12 @@
+body p {
+    line-height: 1.5;
+}
+
+pre code {
+    white-space: pre-wrap !important;
+}
+
+pre {
+    background-color: #0d1117;
+    padding: 10px;
+}

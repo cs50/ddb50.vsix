@@ -1,5 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    const vscode = acquireVsCodeApi();
+    const textarea = document.querySelector('#ddbInput textarea');
+
     window.addEventListener('message', event => {
         const message = event.data;
         switch (message.command) {
@@ -11,10 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ddbChatMessage = document.querySelector(`#id-${message.id}`);
                 ddbChatMessage.innerHTML = message.content;
                 break;
+
+            case 'enable_input':
+                textarea.removeAttribute('disabled');
+                textarea.focus();
+                break;
         }
     });
-
-    const vscode = acquireVsCodeApi();
 
     function getGptResponse(id, message) {
         vscode.postMessage({
@@ -59,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    const textarea = document.querySelector('#ddbInput textarea');
     textarea.focus();
     textarea.addEventListener('keypress', (event) => {
         if (event.key === "Enter" && (event.ctrlKey || event.shiftKey)) {
@@ -68,8 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
             textBox.value = textBox.value.slice(0, textBox.selectionStart) + "\n" + textBox.value.slice(textBox.selectionEnd);
         }
         else if (event.key === 'Enter' && event.target.value) {
-            addMessage({ text: event.target.value });
             event.preventDefault();
+            event.target.setAttribute('disabled', 'disabled');
+            addMessage({ text: event.target.value });
             reply(event.target.value);
             event.target.value = '';
         }
