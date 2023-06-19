@@ -60,7 +60,7 @@ body.vscode-dark .ddbChatBorder-Duck {
 }
 
 body.vscode-dark .ddbChat-User {
-    background-color: rgba(52, 53, 64, 1);
+    background-color: rgba(52, 53, 64, 0.7);
 }
 
 body.vscode-dark .ddbChatBorder-User {
@@ -68,7 +68,7 @@ body.vscode-dark .ddbChatBorder-User {
 }
 
 body.vscode-light .ddbChat-Duck {
-    background-color: rgba(247, 247, 247, 1);
+    background-color: rgba(247, 247, 247, 0.7);
 }
 
 body.vscode-light .ddbChatBorder-Duck {
