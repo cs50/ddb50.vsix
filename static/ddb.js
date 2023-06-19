@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const vscode = acquireVsCodeApi();
     const textarea = document.querySelector('#ddbInput textarea');
+    const chatText = document.querySelector('#ddbChatText');
 
     window.addEventListener('message', event => {
         const message = event.data;
@@ -13,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'delta_update':
                 const ddbChatMessage = document.querySelector(`#id-${message.id}`);
                 ddbChatMessage.innerHTML = message.content;
+                chatText.scrollTop = chatText.scrollHeight;
                 break;
 
             case 'enable_input':
