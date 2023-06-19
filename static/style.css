@@ -21,10 +21,12 @@ body {
 
 body.vscode-light .ddbChat {
     border-bottom: 1px solid #e0e0e0;
+    animation: fadeIn 0.2s;
 }
 
 body.vscode-dark .ddbChat {
     border-bottom: 1px solid #1d1d1d;
+    animation: fadeIn 0.2s;
 }
 
 #ddbChatText p {
@@ -105,9 +107,13 @@ body.vscode-dark #ddbInput textarea {
 
 body.vscode-light #ddbInput textarea {
     border-top: 2px solid #e0e0e0;
-
 }
 
 #ddbInput textarea:focus {
     outline: none;
 }
+
+@keyframes fadeIn {
+    0% {opacity: 0;}
+    100% {opacity: 1;}
+  }

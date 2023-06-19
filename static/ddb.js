@@ -104,8 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             event.target.setAttribute('disabled', 'disabled');
             addMessage({ text: event.target.value });
-            reply(event.target.value);
-            event.target.value = '';
+            setTimeout(() => {
+                reply(event.target.value);
+                event.target.value = '';
+            }, 500 * Math.random() + 500);
         }
     });
     textarea.focus();
