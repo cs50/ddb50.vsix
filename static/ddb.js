@@ -19,8 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 textarea.removeAttribute('disabled');
                 textarea.focus();
                 break;
+
+            case 'persist_messages':
+                localStorage.setItem('msgHistory', JSON.stringify(message.content));
+                break;
         }
     });
+
+    restoreMessages();
 
     function getGptResponse(id, message) {
         vscode.postMessage({
@@ -30,13 +36,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function addMessage({ id, text, fromDuck }, saveMsg = true) {
+    function addMessage({ id, text, fromDuck }, restore = false) {
 
         const message =
             `<p class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
                 <span class="ddbChatBorder ${fromDuck ? 'ddbChatBorder-Duck' : 'ddbChatBorder-User'}"></span>
                 <span class="ddbAuthorName"><b>${(fromDuck ? 'ddb' : 'you')}</b></span>
-                <span id="id-${id}" class="ddbChatMessage">${fromDuck ? '...' : text}</span>
+                <span id="id-${id}" class="ddbChatMessage">${fromDuck && !restore ? '...' : text}</span>
             </p>`;
 
         const parser = new DOMParser();
@@ -45,18 +51,39 @@ document.addEventListener('DOMContentLoaded', () => {
         chatText.appendChild(doc.body.firstChild);
         chatText.scrollTop = chatText.scrollHeight;
 
-        if (fromDuck) {
+        if (fromDuck && !restore) {
             getGptResponse(id, text);
         }
     }
 
-    function clearMessages() {
-        document.querySelector('#ddbChatText').innerHTML = '';
-        localStorage.setItem('msgHistory', JSON.stringify([]));
-    }
-
     function reply(prevMsg) {
         addMessage({ id: uuidv4(), text: prevMsg, fromDuck: true });
+    }
+
+    function clearMessages() {
+        vscode.postMessage({
+            command: 'clear_messages'
+        });
+        localStorage.setItem('msgHistory', JSON.stringify([]));
+        document.querySelector('#ddbChatText').innerHTML = '';
+        textarea.removeAttribute('disabled');
+        textarea.focus();
+    }
+
+    function restoreMessages() {
+        textarea.setAttribute('disabled', 'disabled');
+        const msgHistory = JSON.parse(localStorage.getItem('msgHistory'));
+        if (msgHistory) {
+            msgHistory.forEach(msg => {
+                addMessage({ id: uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, true);
+            });
+        }
+        vscode.postMessage({
+            command: 'restore_messages',
+            content: msgHistory
+        });
+        textarea.removeAttribute('disabled');
+        textarea.focus();
     }
 
     function uuidv4() {
@@ -65,7 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    textarea.focus();
     textarea.addEventListener('keypress', (event) => {
         if (event.key === "Enter" && (event.ctrlKey || event.shiftKey)) {
             event.preventDefault();
@@ -80,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
             event.target.value = '';
         }
     });
+    textarea.focus();
 });
 
 

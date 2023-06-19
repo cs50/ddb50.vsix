@@ -64,6 +64,12 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                     case 'get_gpt_response':
                         this.getGptResponse(message.id, message.content);
                         return;
+                    case 'clear_messages':
+                        messages_array = [];
+                        return;
+                    case 'restore_messages':
+                        messages_array = message.content;
+                        return;
                 }
             },
             undefined,
@@ -115,6 +121,11 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                     this.webViewGlobal!.webview.postMessage(
                         {
                             command: 'enable_input',
+                        });
+                    this.webViewGlobal!.webview.postMessage(
+                        {
+                            command: 'persist_messages',
+                            content: messages_array
                         });
                 });
             });
