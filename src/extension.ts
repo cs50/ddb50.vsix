@@ -1,16 +1,26 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import * as vscode from 'vscode';
+
 const axios = require('axios').default;
 const https = require('https');
 const highlightjs = require('markdown-it-highlightjs');
 const md = require('markdown-it')();
+const uuid = require('uuid');
 md.use(highlightjs);
 
-let githubUserId: any = '';
-let messages_array: any = [];
+let githubUserId: string = '';
+let gpt_messages_array: any = []; // Array of messages in the current session
+let md_messages_array: any = []; // Array of messages in markdown format in the current session
 
 export function activate(context: vscode.ExtensionContext) {
+
+    // If on codespace, get the user id from github
+    getUserId().then((id: string) => {
+        githubUserId = id;
+    });
+
+    // Register the ddb50 chat window
     const provider = new DDBViewProvider(context.extensionUri, context);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(DDBViewProvider.viewId, provider));
@@ -19,16 +29,20 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.clearMessages', () => {
             provider.webViewGlobal?.webview.postMessage({ command: 'clearMessages' });
-            messages_array = [];
+            gpt_messages_array = [];
         })
     );
 
-    getUserId().then((id: string) => {
-        githubUserId = id;
-    });
+    // Expose ddb50 API to other extensions (e.g., style50)
+    const api = {
+        requestGptResponse: async (message: string, prompt: string) => {
+            provider.addMessageToChat(message, prompt);
+        }
+    };
+    return api;
 }
 
-async function getUserId() {
+async function getUserId(): Promise<string> {
     const url = 'https://api.github.com/user';
     const headers = {
         'Accept': 'application/vnd.github+json',
@@ -37,11 +51,14 @@ async function getUserId() {
     };
     return await axios.get(url, { headers: headers }).then((response: any) => {
         return response.data.id;
+    }).catch((error: any) => {
+        console.log(error);
     });
 }
 
 class DDBViewProvider implements vscode.WebviewViewProvider {
-    public static readonly viewId = 'ddb50.debugView';
+
+    public static readonly viewId = 'ddb50.chatWindow';
     public webViewGlobal: vscode.WebviewView | undefined;
 
     constructor(
@@ -61,40 +78,53 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
+                    case 'clear_messages':
+                        gpt_messages_array = [];
+                        md_messages_array = [];
+                        return;
+
                     case 'get_gpt_response':
                         this.getGptResponse(message.id, message.content);
                         return;
-                    case 'clear_messages':
-                        messages_array = [];
-                        return;
+
                     case 'restore_messages':
-                        messages_array = message.content;
+                        gpt_messages_array = message.content;
                         return;
                 }
             },
             undefined,
             this.context.subscriptions
         );
-        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+        webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
         this.webViewGlobal = webviewView;
     }
 
-    private getGptResponse(id: string, content: string) {
-        try {
-
-            messages_array.push({
-                role: 'user',
-                content: content
-            });
-
-            const postData = JSON.stringify({
-                'messages': messages_array,
-                'stream': true,
-                'user': {
-                    'id': githubUserId,
-                    'login': process.env['GITHUB_USER']
+    public addMessageToChat(message: string, prompt: string) {
+        vscode.commands.executeCommand('ddb50.chatWindow.focus');
+        this.webViewGlobal!.webview.postMessage(
+            {
+                command: 'addMessage',
+                content: {
+                    "userMessage": message,
                 }
             });
+        this.getGptResponse(uuid.v4(), prompt, false);
+    }
+
+    private getGptResponse(id: string, content: string, persist_messages = true) {
+
+        try {
+            if (persist_messages) {
+                gpt_messages_array.push({ role: 'user', content: content });
+                md_messages_array.push({ role: 'user', content: content});
+                this.webViewGlobal!.webview.postMessage(
+                    {
+                        command: 'persist_messages',
+                        gpt_messages_array: gpt_messages_array,
+                        md_messages_array: md_messages_array
+                    }
+                );
+            }
 
             const postOptions = {
                 method: 'POST',
@@ -106,7 +136,17 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 }
             };
 
+            const postData = JSON.stringify({
+                'messages': persist_messages ? gpt_messages_array : [{ role: 'user', content: content }],
+                'stream': true,
+                'user': {
+                    'id': githubUserId,
+                    'login': process.env['GITHUB_USER']
+                }
+            });
+
             const postRequest = https.request(postOptions, (res: any) => {
+
                 let buffers: string = '';
                 res.on('data', (chunk: any) => {
                     buffers += chunk;
@@ -114,19 +154,18 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 });
 
                 res.on('end', () => {
-                    messages_array.push({
-                        role: 'assistant',
-                        content: buffers
-                    });
-                    this.webViewGlobal!.webview.postMessage(
-                        {
-                            command: 'enable_input',
-                        });
-                    this.webViewGlobal!.webview.postMessage(
-                        {
-                            command: 'persist_messages',
-                            content: messages_array
-                        });
+                    if (persist_messages) {
+                        gpt_messages_array.push({ role: 'assistant', content: buffers });
+                        md_messages_array.push({ role: 'assistant', content: md.render(buffers) });
+                        this.webViewGlobal!.webview.postMessage(
+                            {
+                                command: 'persist_messages',
+                                gpt_messages_array: gpt_messages_array,
+                                md_messages_array: md_messages_array
+                            }
+                        );
+                    }
+                    this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
                 });
             });
 
@@ -141,37 +180,29 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         this.webViewGlobal!.webview.postMessage(
             {
                 command: 'delta_update',
+                content: md.render(content),
                 id: id,
-                content: md.render(content)
             });
     }
 
-    private _getHtmlForWebview(webview: vscode.Webview) {
+    private getHtmlForWebview(webview: vscode.Webview) {
 
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'static', 'ddb.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'static', 'style.css'));
-        const highlightjsUri = webview.asWebviewUri(
-        vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/highlight.min.js`));
+        const highlightjsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/highlight.min.js`));
         let highlightStyleUri: vscode.Uri;
         let codeStyleUri: vscode.Uri;
 
         let lightTheme = [vscode.ColorThemeKind.Light, vscode.ColorThemeKind.HighContrastLight];
         const isLightTheme = lightTheme.includes(vscode.window.activeColorTheme.kind);
         if (isLightTheme) {
-            codeStyleUri = webview.asWebviewUri(
-                vscode.Uri.joinPath(this._extensionUri, `static/css/light.css`
-            ));
-            highlightStyleUri = webview.asWebviewUri(
-                vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github.min.css`));
+            codeStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/css/light.css`));
+            highlightStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github.min.css`));
         } else {
-            codeStyleUri = webview.asWebviewUri(
-                vscode.Uri.joinPath(this._extensionUri, `static/css/dark.css`
-            ));
-            highlightStyleUri = webview.asWebviewUri(
-                vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github-dark.min.css`));
+            codeStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/css/dark.css`));
+            highlightStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github-dark.min.css`));
         }
 
-        // Get font size from vscode settings
         let fontSize: number | undefined = vscode.workspace.getConfiguration().get('editor.fontSize');
         fontSize !== undefined ? fontSize : 12;
 

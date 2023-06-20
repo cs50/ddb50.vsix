@@ -7,14 +7,25 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('message', event => {
         const message = event.data;
         switch (message.command) {
+            case 'addMessage':
+                addMessage({ text: message.content.userMessage });
+                break;
+
             case 'clearMessages':
                 clearMessages();
                 break;
 
             case 'delta_update':
                 const ddbChatMessage = document.querySelector(`#id-${message.id}`);
-                ddbChatMessage.innerHTML = message.content;
-                chatText.scrollTop = chatText.scrollHeight;
+                if (ddbChatMessage === null) {
+
+                    // Recreate ddb chat message
+                    textarea.setAttribute('disabled', 'disabled');
+                    addMessage({ id: message.id, text: message.content, fromDuck: true }, restore = true);
+                } else {
+                    ddbChatMessage.innerHTML = message.content;
+                    chatText.scrollTop = chatText.scrollHeight;
+                }
                 break;
 
             case 'enable_input':
@@ -23,7 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
 
             case 'persist_messages':
-                localStorage.setItem('msgHistory', JSON.stringify(message.content));
+                localStorage.setItem('gptMessagesHistory', JSON.stringify(message.gpt_messages_array));
+                localStorage.setItem('mdMessagesHistory', JSON.stringify(message.md_messages_array));
                 break;
         }
     });
@@ -38,15 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function addMessage({ id, text, fromDuck }, restore = false) {
-
+    function addMessage({ id = uuidv4(), text, fromDuck }, restore = false) {
         const message =
-            `<p class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
+            `<div class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
                 <span class="ddbChatBorder ${fromDuck ? 'ddbChatBorder-Duck' : 'ddbChatBorder-User'}"></span>
                 <span class="ddbAuthorName"><b>${(fromDuck ? 'ddb' : 'you')}</b></span>
                 <span id="id-${id}" class="ddbChatMessage">${fromDuck && !restore ? '...' : text}</span>
-            </p>`;
-
+            </div>`;
         const parser = new DOMParser();
         const doc = parser.parseFromString(message, 'text/html');
         const chatText = document.querySelector('#ddbChatText');
@@ -59,14 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function reply(prevMsg) {
-        addMessage({ id: uuidv4(), text: prevMsg, fromDuck: true });
+        addMessage({ text: prevMsg, fromDuck: true });
     }
 
     function clearMessages() {
         vscode.postMessage({
             command: 'clear_messages'
         });
-        localStorage.setItem('msgHistory', JSON.stringify([]));
+        localStorage.setItem('gptMessagesHistory', JSON.stringify([]));
+        localStorage.setItem('mdMessagesHistory', JSON.stringify([]));
         document.querySelector('#ddbChatText').innerHTML = '';
         textarea.removeAttribute('disabled');
         textarea.focus();
@@ -75,19 +86,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function restoreMessages() {
         try {
             textarea.setAttribute('disabled', 'disabled');
-            const msgHistory = JSON.parse(localStorage.getItem('msgHistory'));
-            if (msgHistory) {
-                msgHistory.forEach(msg => {
-                    addMessage({ id: uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, true);
+            const gptMessagesHistory = JSON.parse(localStorage.getItem('gptMessagesHistory'));
+            const mdMessagesHistory = JSON.parse(localStorage.getItem('mdMessagesHistory'));
+            if (mdMessagesHistory) {
+                mdMessagesHistory.forEach(msg => {
+                    addMessage({ id: msg.id || uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, true);
                 });
             }
             vscode.postMessage({
                 command: 'restore_messages',
-                content: msgHistory
+                content: gptMessagesHistory
             });
         } catch (error) {
             clearMessages();
-            console.error(error);
         } finally {
             textarea.removeAttribute('disabled');
             textarea.focus();
@@ -109,10 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (event.key === 'Enter' && event.target.value) {
             event.preventDefault();
             event.target.setAttribute('disabled', 'disabled');
-            addMessage({ text: event.target.value });
+            userMessage = event.target.value;
+            event.target.value = '';
+            addMessage({ text: userMessage });
             setTimeout(() => {
-                reply(event.target.value);
-                event.target.value = '';
+                reply(userMessage);
             }, 500 * Math.random() + 500);
         }
     });

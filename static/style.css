@@ -31,7 +31,6 @@ body.vscode-dark .ddbChat {
 
 #ddbChatText p {
     margin: 0px;
-    padding: 10px;
     position: relative;
     word-wrap: break-word;
 }
@@ -42,6 +41,14 @@ body.vscode-dark .ddbChat {
 
 .ddbChatMessage {
     display: block;
+    padding: 10px;
+}
+
+.ddbChat {
+    margin: 0px;
+    padding: 10px;
+    position: relative;
+    word-wrap: break-word;
 }
 
 .ddbChatBorder {
