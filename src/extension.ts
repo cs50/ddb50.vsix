@@ -9,16 +9,10 @@ const md = require('markdown-it')();
 const uuid = require('uuid');
 md.use(highlightjs);
 
-let githubUserId: string = '';
 let gpt_messages_array: any = []; // Array of messages in the current session
 let md_messages_array: any = []; // Array of messages in markdown format in the current session
 
 export function activate(context: vscode.ExtensionContext) {
-
-    // If on codespace, get the user id from github
-    getUserId().then((id: string) => {
-        githubUserId = id;
-    });
 
     // Register the ddb50 chat window
     const provider = new DDBViewProvider(context.extensionUri, context);
@@ -40,20 +34,6 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
     return api;
-}
-
-async function getUserId(): Promise<string> {
-    const url = 'https://api.github.com/user';
-    const headers = {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': `Bearer ${process.env['GITHUB_TOKEN']}`,
-        'X-GitHub-Api-Version': '2022-11-28'
-    };
-    return await axios.get(url, { headers: headers }).then((response: any) => {
-        return response.data.id;
-    }).catch((error: any) => {
-        console.log(error);
-    });
 }
 
 class DDBViewProvider implements vscode.WebviewViewProvider {
@@ -130,19 +110,16 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 method: 'POST',
                 host: 'cs50.ai',
                 port: 443,
-                path: '/api/ddb50',
+                path: '/api/v1/ddb50',
                 headers: {
+                    'Authorization': `Bearer ${process.env['CS50_TOKEN']}`,
                     'Content-Type': 'application/json'
                 }
             };
 
             const postData = JSON.stringify({
                 'messages': persist_messages ? gpt_messages_array : [{ role: 'user', content: content }],
-                'stream': true,
-                'user': {
-                    'id': githubUserId,
-                    'login': process.env['GITHUB_USER']
-                }
+                'stream': true
             });
 
             const postRequest = https.request(postOptions, (res: any) => {
