@@ -42,6 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     restoreMessages();
 
+    if (document.querySelector('#ddbChatText').children.length === 0) {
+        const disclaimer = "Quack. I am an experimental bot. Quack quack. My replies might not always be accurate, so always think critically and let me know if you think that I've erred. Quack quack quack.";
+        addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, restore = true);
+    }
+
     function getGptResponse(id, message) {
         vscode.postMessage({
             command: 'get_gpt_response',
@@ -122,6 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
             event.target.setAttribute('disabled', 'disabled');
             userMessage = event.target.value;
             event.target.value = '';
+            if (document.querySelector('#id-disclaimer')) {
+                document.querySelector('#id-disclaimer').parentElement.remove();
+            }
             addMessage({ text: userMessage });
             setTimeout(() => {
                 reply(userMessage);
