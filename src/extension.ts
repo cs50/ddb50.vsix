@@ -79,16 +79,19 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         this.webViewGlobal = webviewView;
     }
 
-    public addMessageToChat(message: string, prompt: string) {
-        vscode.commands.executeCommand('ddb50.chatWindow.focus');
-        this.webViewGlobal!.webview.postMessage(
-            {
-                command: 'addMessage',
-                content: {
-                    "userMessage": message,
-                }
-            });
-        this.getGptResponse(uuid.v4(), prompt, false);
+    public async addMessageToChat(message: string, prompt: string) {
+        await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
+            setTimeout(() => {
+                this.webViewGlobal!.webview.postMessage(
+                    {
+                        command: 'addMessage',
+                        content: {
+                            "userMessage": message,
+                        }
+                    });
+                this.getGptResponse(uuid.v4(), prompt, false);
+            }, 100);
+        });
     }
 
     private getGptResponse(id: string, content: string, persist_messages = true) {
