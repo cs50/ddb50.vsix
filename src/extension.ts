@@ -115,7 +115,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 port: 443,
                 path: '/api/v1/ddb50',
                 headers: {
-                    'Authorization': `Bearer ${process.env['CS50_TOKEN']?.trim()}`,
+                    'Authorization': `Bearer ${process.env['CS50_TOKEN']?.replace(/[\x00-\x1F\x7F-\x9F]/g, "")}`,
                     'Content-Type': 'application/json'
                 }
             };
