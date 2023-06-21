@@ -1,7 +1,7 @@
 {
     "name": "ddb50",
-    "displayName": "CS50 Duck Debugger",
-    "description": "Provide everyone with their own virtual duck in VS Code. Introduce students to rubber duck debugging, a technique that involves talking to a rubber duck (or any inanimate, or even animate object) about a bug in their code.",
+    "displayName": "CS50 AI Duck Debugger",
+    "description": "Provide everyone with their own virtual duck in VS Code. Introduce students to rubber duck debugging, a technique that involves talking to a rubber duck (or any inanimate, or even animate object) about a bug in their code. Now, with the power of OpenAI's ChatGPT, your rubber duck can talk back!",
     "icon": "images/ddb50.png",
     "version": "2.0.0",
     "publisher": "CS50",
