@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     restoreMessages();
 
     if (document.querySelector('#ddbChatText').children.length === 0) {
-        const disclaimer = "Quack. I am an experimental bot. Quack quack. My replies might not always be accurate, so always think critically and let me know if you think that I've erred. Quack quack quack.";
+        const disclaimer = "Quack. I am CS50's duck debugger (ddb), an experimental AI for [rubberducking](https://en.wikipedia.org/wiki/Rubber_duck_debugging). Quack quack. My replies might not always be accurate, so always think critically and let me know if you think that I've erred. Conversations are logged for debugging's sake. Quack quack quack.";
         addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, restore = true);
     }
 
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `<div class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
                 <span class="ddbChatBorder ${fromDuck ? 'ddbChatBorder-Duck' : 'ddbChatBorder-User'}"></span>
                 <span class="ddbAuthorName"><b>${(fromDuck ? 'ddb' : 'you')}</b></span>
-                <span id="id-${id}" class="ddbChatMessage">${fromDuck && !restore ? '...' : text}</span>
+                <span id="id-${id}" class="ddbChatMessage">${fromDuck && !restore ? '...' : markdown.toHTML(text)}</span>
             </div>`;
         const parser = new DOMParser();
         const doc = parser.parseFromString(message, 'text/html');
@@ -127,9 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
             event.target.setAttribute('disabled', 'disabled');
             userMessage = event.target.value;
             event.target.value = '';
-            if (document.querySelector('#id-disclaimer')) {
-                document.querySelector('#id-disclaimer').parentElement.remove();
-            }
             addMessage({ text: userMessage });
             setTimeout(() => {
                 reply(userMessage);

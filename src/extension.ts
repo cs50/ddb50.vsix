@@ -189,6 +189,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
             codeStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/css/dark.css`));
             highlightStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github-dark.min.css`));
         }
+        const markdownUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/markdown/markdown.js`));
 
         let fontSize: number | undefined = vscode.workspace.getConfiguration().get('editor.fontSize');
         fontSize !== undefined ? fontSize : 12;
@@ -212,6 +213,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                     </div>
                 </body>
                 <script src="${highlightjsUri}"></script>
+                <script src="${markdownUri}"></script>
                 <script src="${scriptUri}"></script>
             </html>
         `;
