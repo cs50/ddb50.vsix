@@ -4,6 +4,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.querySelector('#ddbInput textarea');
     const chatText = document.querySelector('#ddbChatText');
 
+    const md = window.markdownit({
+        highlight: function (str, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                try {
+                    return '<pre class="hljs"><code>' +
+                        hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+                        '</code></pre>';
+                } catch (__) {}
+            }
+            return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+        }
+    });
+
     window.addEventListener('message', event => {
         const message = event.data;
         switch (message.command) {
@@ -59,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `<div class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
                 <span class="ddbChatBorder ${fromDuck ? 'ddbChatBorder-Duck' : 'ddbChatBorder-User'}"></span>
                 <span class="ddbAuthorName"><b>${(fromDuck ? 'ddb' : 'you')}</b></span>
-                <span id="id-${id}" class="ddbChatMessage">${fromDuck && !restore ? '...' : markdown.toHTML(text)}</span>
+                <span id="id-${id}" class="ddbChatMessage">${fromDuck && !restore ? '...' : md.render(text)}</span>
             </div>`;
         const parser = new DOMParser();
         const doc = parser.parseFromString(message, 'text/html');
