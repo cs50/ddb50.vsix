@@ -10,7 +10,6 @@ const uuid = require('uuid');
 md.use(highlightjs);
 
 let gpt_messages_array: any = []; // Array of messages in the current session
-let md_messages_array: any = []; // Array of messages in markdown format in the current session
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -60,7 +59,6 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 switch (message.command) {
                     case 'clear_messages':
                         gpt_messages_array = [];
-                        md_messages_array = [];
                         return;
 
                     case 'get_gpt_response':
@@ -99,12 +97,10 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         try {
             if (persist_messages) {
                 gpt_messages_array.push({ role: 'user', content: content });
-                md_messages_array.push({ role: 'user', content: content});
                 this.webViewGlobal!.webview.postMessage(
                     {
                         command: 'persist_messages',
-                        gpt_messages_array: gpt_messages_array,
-                        md_messages_array: md_messages_array
+                        gpt_messages_array: gpt_messages_array
                     }
                 );
             }
@@ -143,12 +139,10 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 res.on('end', () => {
                     if (persist_messages) {
                         gpt_messages_array.push({ role: 'assistant', content: buffers });
-                        md_messages_array.push({ role: 'assistant', content: md.render(buffers) });
                         this.webViewGlobal!.webview.postMessage(
                             {
                                 command: 'persist_messages',
-                                gpt_messages_array: gpt_messages_array,
-                                md_messages_array: md_messages_array
+                                gpt_messages_array: gpt_messages_array
                             }
                         );
                     }

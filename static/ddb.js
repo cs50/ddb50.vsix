@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             case 'persist_messages':
                 localStorage.setItem('gptMessagesHistory', JSON.stringify(message.gpt_messages_array));
-                localStorage.setItem('mdMessagesHistory', JSON.stringify(message.md_messages_array));
                 break;
         }
     });
@@ -82,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
             command: 'clear_messages'
         });
         localStorage.setItem('gptMessagesHistory', JSON.stringify([]));
-        localStorage.setItem('mdMessagesHistory', JSON.stringify([]));
         document.querySelector('#ddbChatText').innerHTML = '';
         textarea.removeAttribute('disabled');
         textarea.focus();
@@ -92,9 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             textarea.setAttribute('disabled', 'disabled');
             const gptMessagesHistory = JSON.parse(localStorage.getItem('gptMessagesHistory'));
-            const mdMessagesHistory = JSON.parse(localStorage.getItem('mdMessagesHistory'));
-            if (mdMessagesHistory) {
-                mdMessagesHistory.forEach(msg => {
+            if (gptMessagesHistory) {
+                gptMessagesHistory.forEach(msg => {
                     addMessage({ id: msg.id || uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, true);
                 });
             }
