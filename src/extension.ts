@@ -2,7 +2,6 @@
 
 import * as vscode from 'vscode';
 
-const axios = require('axios').default;
 const https = require('https');
 const highlightjs = require('markdown-it-highlightjs');
 const md = require('markdown-it')();
@@ -28,8 +27,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Expose ddb50 API to other extensions (e.g., style50)
     const api = {
-        requestGptResponse: async (message: string, prompt: string) => {
-            provider.addMessageToChat(message, prompt);
+        requestGptResponse: async (displayMessage: string, payload: any) => {
+            provider.createDisplayMessage(displayMessage);
+            provider.getGptResponse(uuid.v4(), payload, false);
         }
     };
     return api;
@@ -77,7 +77,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         this.webViewGlobal = webviewView;
     }
 
-    public async addMessageToChat(message: string, prompt: string) {
+    public async createDisplayMessage(message: string) {
         await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
             setTimeout(() => {
                 this.webViewGlobal!.webview.postMessage(
@@ -87,16 +87,15 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                             "userMessage": message,
                         }
                     });
-                this.getGptResponse(uuid.v4(), prompt, false);
             }, 100);
         });
     }
 
-    private getGptResponse(id: string, content: string, persist_messages = true) {
+    public getGptResponse(id: string, payload: any, chat = true) {
 
         try {
-            if (persist_messages) {
-                gpt_messages_array.push({ role: 'user', content: content });
+            if (chat) {
+                gpt_messages_array.push({ role: 'user', content: payload });
                 this.webViewGlobal!.webview.postMessage(
                     {
                         command: 'persist_messages',
@@ -109,17 +108,18 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 method: 'POST',
                 host: 'cs50.ai',
                 port: 443,
-                path: '/api/v1/ddb50',
+                path: chat ? '/api/v1/chat' : payload.api,
                 headers: {
                     'Authorization': `Bearer ${process.env['CS50_TOKEN']?.replace(/[\x00-\x1F\x7F-\x9F]/g, "")}`,
                     'Content-Type': 'application/json'
                 }
             };
 
-            const postData = JSON.stringify({
-                'messages': persist_messages ? gpt_messages_array : [{ role: 'user', content: content }],
+            let postData;
+            chat ? postData = JSON.stringify({
+                'messages': gpt_messages_array,
                 'stream': true
-            });
+            }) : postData = JSON.stringify(payload);
 
             const postRequest = https.request(postOptions, (res: any) => {
 
@@ -137,7 +137,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 });
 
                 res.on('end', () => {
-                    if (persist_messages) {
+                    if (chat) {
                         gpt_messages_array.push({ role: 'assistant', content: buffers });
                         this.webViewGlobal!.webview.postMessage(
                             {
