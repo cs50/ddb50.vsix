@@ -13,6 +13,7 @@ body {
     height: 100%;
     flex-direction: column;
     justify-content: space-between;
+    animation: fadeIn 1.2s;
 }
 
 #ddbChatText {
@@ -30,7 +31,6 @@ body.vscode-dark .ddbChat {
 }
 
 #ddbChatText p {
-    margin: 0px;
     position: relative;
     word-wrap: break-word;
 }
@@ -41,7 +41,15 @@ body.vscode-dark .ddbChat {
 
 .ddbChatMessage {
     display: block;
-    padding: 10px;
+    padding: 5px;
+}
+
+.ddbChatMessage p {
+    margin-bottom: 5px;
+}
+
+.ddbChatMessage li {
+    margin-bottom: 10px;
 }
 
 .ddbChat {
@@ -93,7 +101,7 @@ body.vscode-light .ddbChatBorder-User {
 }
 
 #ddbInput {
-    height: 55px;
+    height: 60px;
     margin-top: auto;
     padding: 5px;
 }
@@ -119,6 +127,21 @@ body.vscode-light #ddbInput textarea {
 #ddbInput textarea:focus {
     outline: none;
 }
+
+pre code {
+    white-space: pre-wrap !important;
+}
+
+[data-bs-theme=dark] pre {
+    background-color: #0d1117;
+    padding: 10px;
+}
+
+[data-bs-theme=light] pre {
+    background-color: #e0e0e0;
+    padding: 10px;
+}
+
 
 @keyframes fadeIn {
     0% {opacity: 0;}
