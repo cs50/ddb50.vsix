@@ -125,7 +125,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
 
                 if (res.statusCode !== 200) {
                     console.log(res.statusCode, res.statusMessage);
-                    this.webviewDeltaUpdate(id, 'Quack! I\'m having trouble connecting to the server. Please try again later.');
+                    this.webviewDeltaUpdate(id, 'Quack! I\'m having trouble connecting to the server. Please try again later.\n');
                     this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
                     return;
                 }

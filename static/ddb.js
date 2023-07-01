@@ -34,7 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Recreate ddb chat message
                     textarea.setAttribute('disabled', 'disabled');
-                    addMessage({ id: message.id, text: message.content, fromDuck: true }, restore = true);
+                    addMessage({ id: message.id, text: "", fromDuck: true }, restore = true);
+
+                    // Markdown render
+                    document.querySelector(`#id-${message.id}`).innerHTML = message.content;
                 } else {
                     ddbChatMessage.innerHTML = message.content;
                     chatText.scrollTop = chatText.scrollHeight;
