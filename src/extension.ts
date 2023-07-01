@@ -110,7 +110,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 port: 443,
                 path: chat ? '/api/v1/chat' : payload.api,
                 headers: {
-                    'Authorization': `Bearer ${process.env['CS50_TOKEN']?.replace(/[\x00-\x1F\x7F-\x9F]/g, "")}`,
+                    'Authorization': `Bearer ${(process.env['CS50_TOKEN'] || process.env['GITHUB_TOKEN'])!.replace(/[\x00-\x1F\x7F-\x9F]/g, "")}`,
                     'Content-Type': 'application/json'
                 }
             };
