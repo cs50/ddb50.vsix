@@ -206,7 +206,10 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                     <link href="${codeStyleUri}" rel="stylesheet">
                     <link href="${styleUri}" rel="stylesheet">
                     <title>ddb50</title>
-                    <style>body { font-size: ${fontSize}px; }</style>
+                    <style>
+                        body { font-size: ${fontSize}px; }
+                        textarea { font-size: ${fontSize}px; }
+                    </style>
                 </head>
                 <body>
                     <div id="ddbChatContainer">
