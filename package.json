@@ -19,7 +19,7 @@
     "contributes": {
         "commands": [
             {
-                "command": "ddb50.clearMessages",
+                "command": "ddb50.resetHistory",
                 "title": "Clear Messages",
                 "icon": "$(extensions-refresh)"
             }
@@ -45,7 +45,7 @@
         "menus": {
             "view/title": [
                 {
-                    "command": "ddb50.clearMessages",
+                    "command": "ddb50.resetHistory",
                     "group": "navigation",
                     "when": "view == ddb50.chatWindow"
                 }

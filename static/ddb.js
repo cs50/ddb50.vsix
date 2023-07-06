@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 addMessage({ text: message.content.userMessage });
                 break;
 
-            case 'clearMessages':
-                clearMessages();
+            case 'resetHistory':
+                resetMessages();
                 break;
 
             case 'delta_update':
@@ -92,9 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessage({ text: prevMsg, fromDuck: true });
     }
 
-    function clearMessages() {
+    function resetMessages() {
         vscode.postMessage({
-            command: 'clear_messages'
+            command: 'reset_history'
         });
         localStorage.setItem('gptMessagesHistory', JSON.stringify([]));
         document.querySelector('#ddbChatText').innerHTML = '';
@@ -106,17 +106,20 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             textarea.setAttribute('disabled', 'disabled');
             const gptMessagesHistory = JSON.parse(localStorage.getItem('gptMessagesHistory'));
-            if (gptMessagesHistory) {
+            if (gptMessagesHistory !== null) {
                 gptMessagesHistory.forEach(msg => {
                     addMessage({ id: msg.id || uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, true);
                 });
+                vscode.postMessage({
+                    command: 'restore_messages',
+                    content: gptMessagesHistory
+                });
+            } else {
+                resetMessages();
             }
-            vscode.postMessage({
-                command: 'restore_messages',
-                content: gptMessagesHistory
-            });
         } catch (error) {
-            clearMessages();
+            console.log(error);
+            resetMessages();
         } finally {
             textarea.removeAttribute('disabled');
             textarea.focus();

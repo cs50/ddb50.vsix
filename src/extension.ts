@@ -19,8 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Command: Clear Messages in the ddb50 chat window
     context.subscriptions.push(
-        vscode.commands.registerCommand('ddb50.clearMessages', () => {
-            provider.webViewGlobal?.webview.postMessage({ command: 'clearMessages' });
+        vscode.commands.registerCommand('ddb50.resetHistory', () => {
+            provider.webViewGlobal?.webview.postMessage({ command: 'resetHistory' });
             gpt_messages_array = [];
         })
     );
@@ -57,7 +57,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
-                    case 'clear_messages':
+                    case 'reset_history':
                         gpt_messages_array = [];
                         return;
 
