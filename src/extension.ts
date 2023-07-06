@@ -27,9 +27,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Expose ddb50 API to other extensions (e.g., style50)
     const api = {
-        requestGptResponse: async (displayMessage: string, payload: any) => {
-            provider.createDisplayMessage(displayMessage);
-            provider.getGptResponse(uuid.v4(), payload, false);
+        requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any) => {
+            provider.createDisplayMessage(displayMessage).then(() => {
+                setTimeout(() => {
+                    provider.getGptResponse(uuid.v4(), payload, contextMessage, false);
+                }, 1000);
+            });
         }
     };
     return api;
@@ -91,26 +94,27 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    public getGptResponse(id: string, payload: any, chat = true) {
+    public getGptResponse(id: string, payload: any, contextMessage: string="", chat = true) {
 
         try {
-            if (chat) {
 
-                // if input is too long, abort
-                if (payload.length > 1000) {
-                    this.webviewDeltaUpdate(id, 'Quack! Too much for me to handle. Please try again with a shorter message.\n');
-                    this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
-                    return;
-                }
-
-                gpt_messages_array.push({ role: 'user', content: payload });
-                this.webViewGlobal!.webview.postMessage(
-                    {
-                        command: 'persist_messages',
-                        gpt_messages_array: gpt_messages_array
-                    }
-                );
+            // if input is too long, abort
+            if (chat && payload.length > 1000) {
+                this.webviewDeltaUpdate(id, 'Quack! Too much for me to handle. Please try again with a shorter message.\n');
+                this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
+                return;
             }
+
+            chat
+            ? gpt_messages_array.push({ role: 'user', content: payload })
+            : gpt_messages_array.push({ role: 'user', content: contextMessage });
+
+            this.webViewGlobal!.webview.postMessage(
+                {
+                    command: 'persist_messages',
+                    gpt_messages_array: gpt_messages_array
+                }
+            );
 
             const postOptions = {
                 method: 'POST',
@@ -126,7 +130,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
             let postData;
             chat ? postData = JSON.stringify({
                 'messages': gpt_messages_array,
-                'stream': true
+                'stream': true,
+                'config': 'chat_cs50'
             }) : postData = JSON.stringify(payload);
 
             const postRequest = https.request(postOptions, (res: any) => {
@@ -145,15 +150,13 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 });
 
                 res.on('end', () => {
-                    if (chat) {
-                        gpt_messages_array.push({ role: 'assistant', content: buffers });
-                        this.webViewGlobal!.webview.postMessage(
-                            {
-                                command: 'persist_messages',
-                                gpt_messages_array: gpt_messages_array
-                            }
-                        );
-                    }
+                    gpt_messages_array.push({ role: 'assistant', content: buffers });
+                    this.webViewGlobal!.webview.postMessage(
+                        {
+                            command: 'persist_messages',
+                            gpt_messages_array: gpt_messages_array
+                        }
+                    );
                     this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
                 });
             });
