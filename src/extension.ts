@@ -99,7 +99,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         try {
 
             // if input is too long, abort
-            if (chat && payload.length > 1000) {
+            if (chat && payload.length > 1000 || contextMessage.length > 1000) {
                 this.webviewDeltaUpdate(id, 'Quack! Too much for me to handle. Please try again with a shorter message.\n');
                 this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
                 return;
