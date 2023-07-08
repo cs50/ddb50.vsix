@@ -18,6 +18,7 @@ body {
 
 #ddbChatText {
     overflow: auto;
+    height: 90%;
 }
 
 body.vscode-light .ddbChat {
@@ -100,8 +101,31 @@ body.vscode-light .ddbChatBorder-User {
     border-left: 3px solid #9abced;
 }
 
+body.vscode-dark #resizeHandle {
+    background-color: #1d1d1d;
+}
+
+body.vscode-light #resizeHandle {
+    background-color: #e0e0e0;
+}
+
+body.vscode-dark #resizeHandle:hover {
+    background-color: #e0e0e0;
+}
+
+body.vscode-light #resizeHandle:hover {
+    background-color: #1d1d1d;
+}
+
+#resizeHandle {
+    order: 1;
+    height: 2px;
+    cursor: ns-resize;
+}
+
 #ddbInput {
-    height: 60px;
+    order: 2;
+    height: 10%;
     margin-top: auto;
     padding: 5px;
 }
@@ -114,14 +138,6 @@ body.vscode-light .ddbChatBorder-User {
     height: 100%;
     width: 100%;
     resize: none;
-}
-
-body.vscode-dark #ddbInput textarea {
-    border-top: 2px solid #1d1d1d;
-}
-
-body.vscode-light #ddbInput textarea {
-    border-top: 2px solid #e0e0e0;
 }
 
 #ddbInput textarea:focus {
@@ -144,6 +160,11 @@ pre code {
 
 
 @keyframes fadeIn {
-    0% {opacity: 0;}
-    100% {opacity: 1;}
-  }
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

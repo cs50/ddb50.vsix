@@ -217,7 +217,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 <body>
                     <div id="ddbChatContainer">
                         <div id="ddbChatText"></div>
-                        <div id="ddbInput"><textarea placeholder="Message ddb"></textarea></div>
+                        <div id="resizeHandle"></div>
+                        <div id="ddbInput"><textarea placeholder="Ask a question"></textarea></div>
                     </div>
                 </body>
                 <script src="${highlightjsUri}"></script>

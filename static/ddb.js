@@ -150,6 +150,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     textarea.focus();
+
+    // resize
+    let resizeHandle = document.getElementById('resizeHandle');
+    let ddbChatText = document.getElementById('ddbChatText');
+    let ddbInput = document.getElementById('ddbInput');
+
+    let startPos;
+    let startHeightChat;
+    let startHeightInput;
+
+    function resize(e){
+        let y = startPos - e.clientY;
+        let chatHeight = startHeightChat - y;
+        let inputHeight = startHeightInput + y;
+
+        // Limiting the size so that elements don't disappear completely
+        if (chatHeight > 50 && inputHeight > 50) {
+            ddbChatText.style.height = `${chatHeight}px`;
+            ddbInput.style.height = `${inputHeight}px`;
+        }
+    }
+
+    resizeHandle.addEventListener('mousedown', function(e) {
+        startPos = e.clientY;
+        startHeightChat = ddbChatText.offsetHeight;
+        startHeightInput = ddbInput.offsetHeight;
+        document.addEventListener('mousemove', resize, false);
+    }, false);
+
+    document.addEventListener('mouseup', function() {
+        document.removeEventListener('mousemove', resize, false);
+    }, false);
 });
 
 
