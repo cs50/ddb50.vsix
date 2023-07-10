@@ -124,7 +124,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 headers: {
                     'Authorization': `Bearer ${(process.env['CS50_TOKEN'] || process.env['GITHUB_TOKEN'])!.replace(/[\x00-\x1F\x7F-\x9F]/g, "")}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                timeout: 10000
             };
 
             let postData;
@@ -142,6 +143,15 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                     this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
                     return;
                 }
+
+                res.on('timeout', () => {
+                    console.log('Request timed out');
+                    console.log(res.statusCode, res.statusMessage);
+                    postRequest.abort();
+                    this.webviewDeltaUpdate(id, 'Quack! I\'m having trouble connecting to the server. Please try again later.\n');
+                    this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
+                    return;
+                });
 
                 let buffers: string = '';
                 res.on('data', (chunk: any) => {
