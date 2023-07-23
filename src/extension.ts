@@ -29,6 +29,17 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Command: Have the duck say something in the ddb50 chat window
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.say', async(args) => {
+            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
+                setTimeout(() => {
+                    provider.webViewGlobal?.webview.postMessage({ command: 'say', content: { "userMessage": args[0] } });
+                }, 100);
+            });
+        })
+    );
+
     // Command: Clear Messages in the ddb50 chat window
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.resetHistory', () => {

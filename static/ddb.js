@@ -29,6 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'addMessage':
                 addMessage({ text: message.content.userMessage });
                 break;
+
+            case 'say':
+                addMessage({ text: message.content.userMessage, fromDuck: true }, askGpt = false);
+                break;
             
             case 'resetHistory':
                 resetMessages();
@@ -40,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Recreate ddb chat message
                     textarea.setAttribute('disabled', 'disabled');
-                    addMessage({ id: message.id, text: "", fromDuck: true }, restore = true);
+                    addMessage({ id: message.id, text: "", fromDuck: true }, askGpt = false);
 
                     // Markdown render
                     document.querySelector(`#id-${message.id}`).innerHTML = message.content;
@@ -65,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (document.querySelector('#ddbChatText').children.length === 0) {
         const disclaimer = "Quack. I am CS50's duck debugger (ddb), an experimental AI for [rubberducking](https://en.wikipedia.org/wiki/Rubber_duck_debugging). Quack quack. My replies might not always be accurate, so always think critically and let me know if you think that I've erred. Conversations are logged for debugging's sake. Quack quack quack.";
-        addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, restore = true);
+        addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, askGpt = false);
     }
 
     function getGptResponse(id, message) {
@@ -76,12 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function addMessage({ id = uuidv4(), text, fromDuck }, restore = false) {
+    function addMessage({ id = uuidv4(), text, fromDuck }, askGpt = true) {
         const message =
             `<div class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
                 <span class="ddbChatBorder ${fromDuck ? 'ddbChatBorder-Duck' : 'ddbChatBorder-User'}"></span>
                 <span class="ddbAuthorName"><b>${(fromDuck ? 'ddb' : 'you')}</b></span>
-                <span id="id-${id}" class="ddbChatMessage">${fromDuck && !restore ? '...' : md.render(text.replace(/\n/g, "  \n"))}</span>
+                <span id="id-${id}" class="ddbChatMessage">${fromDuck && askGpt ? '...' : md.render(text.replace(/\n/g, "  \n"))}</span>
             </div>`;
         const parser = new DOMParser();
         const doc = parser.parseFromString(message, 'text/html');
@@ -89,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatText.appendChild(doc.body.firstChild);
         chatText.scrollTop = chatText.scrollHeight;
 
-        if (fromDuck && !restore) {
+        if (fromDuck && askGpt) {
             getGptResponse(id, text);
         }
     }
@@ -114,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const gptMessagesHistory = JSON.parse(localStorage.getItem('gptMessagesHistory'));
             if (gptMessagesHistory !== null) {
                 gptMessagesHistory.forEach(msg => {
-                    addMessage({ id: msg.id || uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, true);
+                    addMessage({ id: msg.id || uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, askGpt = false);
                 });
                 vscode.postMessage({
                     command: 'restore_messages',
