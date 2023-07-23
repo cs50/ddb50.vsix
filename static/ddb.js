@@ -147,7 +147,16 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (event.key === 'Enter' && event.target.value) {
             event.preventDefault();
             event.target.setAttribute('disabled', 'disabled');
-            userMessage = event.target.value;
+            userMessage = event.target.value.trim();
+            
+            // check if userMessage is empty after trimming
+            if (userMessage === '') {
+                event.target.value = '';
+                event.target.removeAttribute('disabled');
+                event.target.focus();
+                return;
+            }
+
             event.target.value = '';
             addMessage({ text: userMessage });
             setTimeout(() => {
