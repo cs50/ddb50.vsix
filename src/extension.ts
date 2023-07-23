@@ -17,6 +17,18 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(DDBViewProvider.viewId, provider));
 
+
+    // Command: Ask a question in the ddb50 chat window
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.ask', async(args) => {
+            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
+                setTimeout(() => {
+                    provider.webViewGlobal?.webview.postMessage({ command: 'ask', content: { "userMessage": args[0] } });
+                }, 100);
+            });
+        })
+    );
+
     // Command: Clear Messages in the ddb50 chat window
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.resetHistory', () => {

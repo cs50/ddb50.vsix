@@ -20,10 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('message', event => {
         const message = event.data;
         switch (message.command) {
+
+            case 'ask':
+                addMessage({ text: message.content.userMessage });
+                reply(message.content.userMessage);
+                break;
+
             case 'addMessage':
                 addMessage({ text: message.content.userMessage });
                 break;
-
+            
             case 'resetHistory':
                 resetMessages();
                 break;
