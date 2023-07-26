@@ -115,7 +115,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function restoreMessages() {
         try {
             textarea.setAttribute('disabled', 'disabled');
-            const gptMessagesHistory = JSON.parse(localStorage.getItem('gptMessagesHistory'));
+            let gptMessagesHistory = JSON.parse(localStorage.getItem('gptMessagesHistory'));
+
+            // filter out messages which its timestamp is older than 6 hours
+            gptMessagesHistory = gptMessagesHistory.filter(msg => {
+                if (!msg.timestamp) {
+                    return false;
+                }
+                const msgTimestamp = new Date(msg.timestamp);
+                const now = new Date();
+                const diff = now - msgTimestamp;
+                const diffHours = Math.floor(diff / 1000 / 60 / 60);
+                return diffHours < 6;
+            });
+
             if (gptMessagesHistory !== null) {
                 gptMessagesHistory.forEach(msg => {
                     addMessage({ id: msg.id || uuidv4(), text: msg.content, fromDuck: msg.role === 'assistant' ? true : false }, askGpt = false);

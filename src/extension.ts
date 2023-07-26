@@ -127,10 +127,13 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
                 return;
             }
+            
+            // request timestamp in epoch time
+            const requestTimestamp = Date.now();
 
             chat
-            ? gpt_messages_array.push({ role: 'user', content: payload })
-            : gpt_messages_array.push({ role: 'user', content: contextMessage });
+            ? gpt_messages_array.push({ role: 'user', content: payload, timestamp: requestTimestamp })
+            : gpt_messages_array.push({ role: 'user', content: contextMessage, timestamp: requestTimestamp });
 
             this.webViewGlobal!.webview.postMessage(
                 {
@@ -151,9 +154,13 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 timeout: 10000
             };
 
+            // ensure message only has "role" and "content" keys
+            const payloadMessages = gpt_messages_array.map((message: any) => {
+                return { role: message.role, content: message.content };
+            });
             let postData;
             chat ? postData = JSON.stringify({
-                'messages': gpt_messages_array,
+                'messages': payloadMessages,
                 'stream': true,
                 'config': 'chat_cs50'
             }) : postData = JSON.stringify(payload);
@@ -183,7 +190,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 });
 
                 res.on('end', () => {
-                    gpt_messages_array.push({ role: 'assistant', content: buffers });
+                    gpt_messages_array.push({ role: 'assistant', content: buffers, timestamp: requestTimestamp });
                     this.webViewGlobal!.webview.postMessage(
                         {
                             command: 'persist_messages',
