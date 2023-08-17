@@ -39,6 +39,28 @@ export function activate(context: vscode.ExtensionContext) {
             });
         })
     );
+    
+    // Command: Prompt the user for input in the ddb50 chat window
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.prompt', async(args) => {
+            vscode.window.showInformationMessage(
+                args[0], ...['Ask for Help', 'Dismiss']).then((selection) => {
+                if (selection === 'Ask for Help') {
+                    vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
+                        setTimeout(() => {
+                            provider.webViewGlobal?.webview.postMessage({ command: 'ask', content: { "userMessage": args[1] } });
+                        }, 100);
+                    });
+                }
+            });
+        })
+    );
+    
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.hide', async(args) => {
+            vscode.window.showInformationMessage("");
+        })
+    );
 
     // Command: Clear Messages in the ddb50 chat window
     context.subscriptions.push(
