@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const vscode = acquireVsCodeApi();
     const textarea = document.querySelector('#ddbInput textarea');
     const chatText = document.querySelector('#ddbChatText');
+    const disclaimer = "Quack. I am CS50's duck debugger (ddb), an experimental AI for [rubberducking](https://en.wikipedia.org/wiki/Rubber_duck_debugging). Quack quack. My replies might not always be accurate, so always think critically and let me know if you think that I've erred. Conversations are logged for debugging's sake. Quack quack quack.";
 
     const md = window.markdownit({
         highlight: function (str, lang) {
@@ -33,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'say':
                 addMessage({ text: message.content.userMessage, fromDuck: true }, askGpt = false);
                 break;
-            
+
             case 'resetHistory':
                 resetMessages();
                 break;
@@ -68,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
     restoreMessages();
 
     if (document.querySelector('#ddbChatText').children.length === 0) {
-        const disclaimer = "Quack. I am CS50's duck debugger (ddb), an experimental AI for [rubberducking](https://en.wikipedia.org/wiki/Rubber_duck_debugging). Quack quack. My replies might not always be accurate, so always think critically and let me know if you think that I've erred. Conversations are logged for debugging's sake. Quack quack quack.";
         addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, askGpt = false);
     }
 
@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         localStorage.setItem('gptMessagesHistory', JSON.stringify([]));
         document.querySelector('#ddbChatText').innerHTML = '';
+        addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, askGpt = false);
         textarea.removeAttribute('disabled');
         textarea.focus();
     }
@@ -165,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
             event.preventDefault();
             event.target.setAttribute('disabled', 'disabled');
             userMessage = event.target.value.trim();
-            
+
             // check if userMessage is empty after trimming
             if (userMessage === '') {
                 event.target.value = '';

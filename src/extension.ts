@@ -39,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
             });
         })
     );
-    
+
     // Command: Prompt the user for input in the ddb50 chat window
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.prompt', async(args) => {
@@ -55,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
             });
         })
     );
-    
+
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.hide', async(args) => {
             vscode.window.showInformationMessage("");
@@ -149,7 +149,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
                 return;
             }
-            
+
             // request timestamp in epoch time
             const requestTimestamp = Date.now();
 
