@@ -9,6 +9,7 @@ const uuid = require('uuid');
 md.use(highlightjs);
 
 let gpt_messages_array: any = []; // Array of messages in the current session
+let thread_ts: string = "";  // thread_ts value for the current session
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -181,11 +182,17 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 return { role: message.role, content: message.content };
             });
             let postData;
-            chat ? postData = JSON.stringify({
+            chat ? postData = {
                 'messages': payloadMessages,
                 'stream': true,
                 'config': 'chat_cs50'
-            }) : postData = JSON.stringify(payload);
+            } : postData = payload;
+
+            // add thread_ts to postData if it exists
+            if (thread_ts !== "") {
+                postData['thread_ts'] = thread_ts;
+            }
+            postData = JSON.stringify(postData);
 
             const postRequest = https.request(postOptions, (res: any) => {
 
@@ -207,8 +214,14 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
 
                 let buffers: string = '';
                 res.on('data', (chunk: any) => {
-                    buffers += chunk;
-                    this.webviewDeltaUpdate(id, buffers);
+
+                    // Check if this chunk contains thread_ts event data
+                    if (chunk.includes("event_thread_ts")) {
+                        thread_ts = chunk.toString().split(": ")[1];
+                    } else {
+                        buffers += chunk;
+                        this.webviewDeltaUpdate(id, buffers);
+                    }
                 });
 
                 res.on('end', () => {
