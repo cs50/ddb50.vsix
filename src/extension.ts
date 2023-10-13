@@ -188,10 +188,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 'config': 'chat_cs50'
             } : postData = payload;
 
-            // add thread_ts to postData if it exists
-            if (thread_ts !== "") {
-                postData['thread_ts'] = thread_ts;
-            }
+            // add thread_ts to postData
+            postData['thread_ts'] = thread_ts;
             postData = JSON.stringify(postData);
 
             const postRequest = https.request(postOptions, (res: any) => {
