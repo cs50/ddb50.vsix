@@ -7,7 +7,7 @@
     "publisher": "CS50",
     "repository": "https://github.com/cs50/ddb50.vsix",
     "engines": {
-        "vscode": "^1.82.0"
+        "vscode": "^1.83.1"
     },
     "categories": [
         "Education"
@@ -62,20 +62,20 @@
     },
     "devDependencies": {
         "@types/glob": "^8.1.0",
-        "@types/mocha": "^10.0.1",
+        "@types/mocha": "^10.0.3",
         "@types/node": "20.x",
-        "@types/vscode": "^1.82.0",
-        "@typescript-eslint/eslint-plugin": "^6.7.0",
-        "@typescript-eslint/parser": "^6.7.0",
-        "eslint": "^8.49.0",
-        "glob": "^10.3.4",
+        "@types/vscode": "^1.83.1",
+        "@typescript-eslint/eslint-plugin": "^6.9.0",
+        "@typescript-eslint/parser": "^6.9.0",
+        "eslint": "^8.52.0",
+        "glob": "^10.3.10",
         "mocha": "^10.2.0",
         "typescript": "^5.2.2",
         "vscode-test": "^1.5.2"
     },
     "dependencies": {
-        "axios": "^1.5.0",
-        "markdown-it": "^13.0.1",
+        "axios": "^1.5.1",
+        "markdown-it": "^13.0.2",
         "markdown-it-highlightjs": "^4.0.1",
         "uuid": "^9.0.1"
     }
