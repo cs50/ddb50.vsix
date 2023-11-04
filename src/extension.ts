@@ -185,7 +185,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
             chat ? postData = {
                 'messages': payloadMessages,
                 'stream': true,
-                'config': 'chat_cs50'
+                'config': vscode.workspace.getConfiguration('ddb50', null)?.config || 'chat_cs50'
             } : postData = payload;
 
             // add thread_ts to postData

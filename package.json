@@ -24,6 +24,17 @@
                 "icon": "$(extensions-refresh)"
             }
         ],
+        "configuration": [
+            {
+                "title": "Config Override",
+                "properties": {
+                    "ddb50.config": {
+                        "type": "string",
+                        "description": "Override default prompts configuration."
+                    }
+                }
+            }
+        ],
         "views": {
             "ddb50": [
                 {
