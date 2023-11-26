@@ -22,6 +22,19 @@
                 "command": "ddb50.resetHistory",
                 "title": "Clear Messages",
                 "icon": "$(extensions-refresh)"
+            },
+            {
+                "command": "ddb50.helpWithTerminal",
+                "title": "Help with Terminal",
+                "icon": "resources/ddb-yellow.svg"
+            },
+            {
+                "command": "ddb50.enableTerminalDuck",
+                "title": "Enable CS50 Duck in Terminal"
+            },
+            {
+                "command": "ddb50.disableTerminalDuck",
+                "title": "Disable CS50 Duck in Terminal"
             }
         ],
         "configuration": [
@@ -59,6 +72,11 @@
                     "command": "ddb50.resetHistory",
                     "group": "navigation",
                     "when": "view == ddb50.chatWindow"
+                },
+                {
+                    "command": "ddb50.helpWithTerminal",
+                    "group": "navigation@-1",
+                    "when": "view == terminal && ddb50:didActivateTerminalDuck"
                 }
             ]
         }

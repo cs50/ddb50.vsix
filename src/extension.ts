@@ -71,6 +71,27 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Command: Help with Terminal
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.helpWithTerminal', async(args) => {
+            vscode.window.showInformationMessage("TODO: Help with Terminal");
+        })
+    );
+
+    // Command: Enable CS50 Duck for terminal
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.enableTerminalDuck', async(args) => {
+            await vscode.commands.executeCommand("setContext", "ddb50:didActivateTerminalDuck", true);
+        })
+    );
+
+    // Command: Disable CS50 Duck for terminal
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.disableTerminalDuck', async(args) => {
+            await vscode.commands.executeCommand("setContext", "ddb50:didActivateTerminalDuck", false);
+        })
+    );
+
     // Expose ddb50 API to other extensions (e.g., style50)
     const api = {
         requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any) => {
