@@ -13,7 +13,6 @@ body {
     height: 100%;
     flex-direction: column;
     justify-content: space-between;
-    animation: fadeIn 1.2s;
 }
 
 #ddbChatText {
@@ -23,12 +22,10 @@ body {
 
 body.vscode-light .ddbChat {
     border-bottom: 1px solid #e0e0e0;
-    animation: fadeIn 0.2s;
 }
 
 body.vscode-dark .ddbChat {
     border-bottom: 1px solid #1d1d1d;
-    animation: fadeIn 0.2s;
 }
 
 #ddbChatText p {
@@ -156,15 +153,4 @@ pre code {
 [data-bs-theme=light] pre {
     background-color: #e0e0e0;
     padding: 10px;
-}
-
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
 }
