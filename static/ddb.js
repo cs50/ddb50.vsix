@@ -68,10 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     restoreMessages();
 
-    if (document.querySelector('#ddbChatText').children.length === 0) {
-        addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, askGpt = false);
-    }
-
     function getGptResponse(id, message) {
         vscode.postMessage({
             command: 'get_gpt_response',
@@ -116,6 +112,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function restoreMessages() {
         try {
             textarea.setAttribute('disabled', 'disabled');
+            
+            // add disclaimer
+            addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, askGpt = false);
+            
+            // restore messages
             let gptMessagesHistory = JSON.parse(localStorage.getItem('gptMessagesHistory'));
 
             // filter out messages which its timestamp is older than 6 hours
