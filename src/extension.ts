@@ -10,6 +10,7 @@ md.use(highlightjs);
 
 let gpt_messages_array: any = []; // Array of messages in the current session
 let thread_ts: string = "";  // thread_ts value for the current session
+let help50_message: string = ""; // help50 message for the current session
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -68,6 +69,51 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('ddb50.resetHistory', () => {
             provider.webViewGlobal?.webview.postMessage({ command: 'resetHistory' });
             gpt_messages_array = [];
+        })
+    );
+
+    // Help50 commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.help50.say', async(args) => {
+            help50_message = args[0];
+            await vscode.commands.executeCommand("setContext", "ddb50:help50ask", false);
+            await vscode.commands.executeCommand("setContext", "ddb50:help50say", true);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.help50.say.click', async(args) => {
+            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
+                setTimeout(() => {
+                    provider.webViewGlobal?.webview.postMessage({ command: 'say', content: { "userMessage": help50_message } });
+                }, 500);
+            });
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.help50.ask', async(args) => {
+            help50_message = args[0];
+            await vscode.commands.executeCommand("setContext", "ddb50:help50say", false);
+            await vscode.commands.executeCommand("setContext", "ddb50:help50ask", true);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.help50.ask.click', async(args) => {
+            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
+                setTimeout(() => {
+                    provider.webViewGlobal?.webview.postMessage({ command: 'ask', content: { "userMessage": help50_message } });
+                }, 500);
+            });
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('ddb50.help50.dismiss', async(args) => {
+            help50_message = "";
+            await vscode.commands.executeCommand("setContext", "ddb50:help50say", false);
+            await vscode.commands.executeCommand("setContext", "ddb50:help50ask", false);
         })
     );
 
