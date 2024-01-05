@@ -22,6 +22,26 @@
                 "command": "ddb50.resetHistory",
                 "title": "Clear Messages",
                 "icon": "$(extensions-refresh)"
+            },
+            {
+                "command": "ddb50.help50.say",
+                "title": "Display help50 Message"
+            },
+            {
+                "command": "ddb50.help50.say.click",
+                "title": "help50"
+            },
+            {
+                "command": "ddb50.help50.ask",
+                "title": "Get help50 Response"
+            },
+            {
+                "command": "ddb50.help50.ask.click",
+                "title": "help50"
+            },
+            {
+                "command": "ddb50.help50.dismiss",
+                "title": "Dismiss help50"
             }
         ],
         "configuration": [
@@ -59,6 +79,16 @@
                     "command": "ddb50.resetHistory",
                     "group": "navigation",
                     "when": "view == ddb50.chatWindow"
+                },
+                {
+                    "command": "ddb50.help50.say.click",
+                    "group": "navigation@-1",
+                    "when": "view == terminal && ddb50:help50say"
+                },
+                {
+                    "command": "ddb50.help50.ask.click",
+                    "group": "navigation@-1",
+                    "when": "view == terminal && ddb50:help50ask"
                 }
             ]
         }
