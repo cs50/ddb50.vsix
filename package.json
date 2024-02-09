@@ -103,20 +103,20 @@
     },
     "devDependencies": {
         "@types/glob": "^8.1.0",
-        "@types/mocha": "^10.0.3",
+        "@types/mocha": "^10.0.6",
         "@types/node": "20.x",
-        "@types/vscode": "^1.83.1",
-        "@typescript-eslint/eslint-plugin": "^6.9.0",
-        "@typescript-eslint/parser": "^6.9.0",
-        "eslint": "^8.52.0",
+        "@types/vscode": "^1.86.0",
+        "@typescript-eslint/eslint-plugin": "^6.21.0",
+        "@typescript-eslint/parser": "^6.21.0",
+        "eslint": "^8.56.0",
         "glob": "^10.3.10",
-        "mocha": "^10.2.0",
-        "typescript": "^5.2.2",
+        "mocha": "^10.3.0",
+        "typescript": "^5.3.3",
         "vscode-test": "^1.5.2"
     },
     "dependencies": {
-        "axios": "^1.5.1",
-        "markdown-it": "^13.0.2",
+        "axios": "^1.6.7",
+        "markdown-it": "^14.0.0",
         "markdown-it-highlightjs": "^4.0.1",
         "uuid": "^9.0.1"
     }
