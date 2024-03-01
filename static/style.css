@@ -152,6 +152,7 @@ body.vscode-light #resizeHandle:hover {
 
 #ddbOutterEnergyBar {
     height: 10px;
+    border-radius: 0 !important;
 }
 
 pre code {
