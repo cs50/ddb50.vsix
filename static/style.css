@@ -65,6 +65,10 @@ body.vscode-dark .ddbChat {
     width: 0;
 }
 
+body.vscode-dark {
+    background-color: transparent;
+    color: #d4d4d4;
+}
 
 body.vscode-dark .ddbChat-Duck {
     background-color: rgba(68, 70, 83, 1);
@@ -80,6 +84,11 @@ body.vscode-dark .ddbChat-User {
 
 body.vscode-dark .ddbChatBorder-User {
     border-left: 3px solid #d2e3fc;
+}
+
+body.vscode-light {
+    background-color: transparent;
+    color:#1d1d1d
 }
 
 body.vscode-light .ddbChat-Duck {
@@ -139,6 +148,10 @@ body.vscode-light #resizeHandle:hover {
 
 #ddbInput textarea:focus {
     outline: none;
+}
+
+#ddbOutterEnergyBar {
+    height: 10px;
 }
 
 pre code {

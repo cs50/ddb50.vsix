@@ -1,5 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // Set intial value for ddb's energy (1 energy point == 1 half heart)
+    const INITIAL_DDB_ENERGY = 10;
+
+    // Set rate at which ddb's energy increases
+    // (in milliseconds - currently 3 minutes)
+    const DDB_ENERGY_REGEN_TIME = 180000;
+
+    // Set energy on page load, with regen enabled
+    let ddbEnergy = getEnergy((regen = true));
+    if (ddbEnergy === null) {
+        ddbEnergy = INITIAL_DDB_ENERGY;
+    }
+    setEnergy(ddbEnergy);
+
+    // Allow one additional question every X minutes
+    setInterval(() => increaseEnergy(1), DDB_ENERGY_REGEN_TIME);
+
     const vscode = acquireVsCodeApi();
     const textarea = document.querySelector('#ddbInput textarea');
     const chatText = document.querySelector('#ddbChatText');
@@ -58,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'enable_input':
                 textarea.removeAttribute('disabled');
                 textarea.focus();
+                setEnergy(getEnergy() - 1);
                 break;
 
             case 'persist_messages':
@@ -76,6 +94,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    /**
+     * Gets a random message when ddb is tired
+     * @param {string} id
+     */
+    function getTiredMessage(id) {
+        const tiredMessages = [
+            "Quack. I'm a little tired right now... zzz...",
+            "zzz... *snore*",
+            "What a... wonderful... zzz... question...",
+            "I will be back soon! Just taking a short nap, zzz...",
+        ];
+        const chosenMessageId = Math.floor(
+            Math.random() * tiredMessages.length
+        );
+        document.querySelector(`#id-${id}`).innerHTML =
+            tiredMessages[chosenMessageId];
+        textarea.removeAttribute("disabled");
+        textarea.focus();
+    }
+
     function addMessage({ id = uuidv4(), text, fromDuck }, askGpt = true) {
         const message =
             `<div class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
@@ -90,7 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
         chatText.scrollTop = chatText.scrollHeight;
 
         if (fromDuck && askGpt) {
-            getGptResponse(id, text);
+            if (getEnergy() > 0) {
+                getGptResponse(id, text);
+            } else {
+                getTiredMessage(id);
+            }
         }
     }
 
@@ -112,10 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function restoreMessages() {
         try {
             textarea.setAttribute('disabled', 'disabled');
-            
+
             // add disclaimer
             addMessage({ id: 'disclaimer', text: disclaimer, fromDuck: true }, askGpt = false);
-            
+
             // restore messages
             let gptMessagesHistory = JSON.parse(localStorage.getItem('gptMessagesHistory'));
 
@@ -149,6 +191,135 @@ document.addEventListener('DOMContentLoaded', () => {
             textarea.removeAttribute('disabled');
             textarea.focus();
         }
+    }
+
+    /**
+         * Renders ddb's energy bar in the DOM
+         * @param {number} ddbEnergy
+         */
+    function renderEnergy(ddbEnergy) {
+        // Validate input type
+        if (typeof ddbEnergy !== "number" || isNaN(ddbEnergy)) {
+            console.error("Input to renderEnergy should be a number");
+            return;
+        }
+
+        // Get energy bar
+        const outterEnergyBar = document.getElementById("ddbOutterEnergyBar");
+        const innerEnergyBar = document.getElementById("ddbInnerEnergyBar");
+        const percentage = (ddbEnergy / INITIAL_DDB_ENERGY) * 100;
+
+        // Set width of inner energy bar
+        innerEnergyBar.style.width = `${percentage}%`;
+        outterEnergyBar.setAttribute("aria-valuenow", percentage);
+
+        // if percentage below 50% but above 20%, change color to warning
+        if (percentage === 100) {
+            innerEnergyBar.classList.remove("bg-warning");
+            innerEnergyBar.classList.remove("bg-danger");
+            innerEnergyBar.classList.add("bg-success");
+        }
+        else if (percentage >= 50) {
+            innerEnergyBar.classList.remove("bg-success");
+            innerEnergyBar.classList.remove("bg-warning");
+            innerEnergyBar.classList.remove("bg-danger");
+        }
+        else if (percentage < 50 && percentage > 20) {
+            innerEnergyBar.classList.add("bg-warning");
+            innerEnergyBar.classList.remove("bg-danger");
+        }
+        else {
+            innerEnergyBar.classList.add("bg-danger");
+            innerEnergyBar.classList.remove("bg-warning");
+        }
+    }
+
+    /**
+     * Increases ddbEnergy by specified amount, then renders changes
+     * @param {number} increaseAmount
+     */
+    function increaseEnergy(increaseAmount) {
+        // Validate input
+        if (typeof increaseAmount !== "number" || isNaN(increaseAmount)) {
+            console.error("Input to increaseEnergy should be a number");
+            return;
+        }
+
+        let ddbEnergy = getEnergy();
+
+        // Add to energy, capping at initial value
+        ddbEnergy = Math.min(INITIAL_DDB_ENERGY, ddbEnergy + increaseAmount);
+
+        // Set new value
+        setEnergy(ddbEnergy);
+    }
+
+    /**
+     * Gets ddbEnergy from local storage
+     * (can regenerate based on elapsed time)
+     * @param {tf} regen
+     * @returns {number|null} ddbEnergy
+     */
+    function getEnergy(regen = false) {
+        try {
+            // Retrieve value from local storage
+            let ddbEnergyObj = localStorage.getItem("ddbEnergyObj");
+            if (ddbEnergyObj === null) {
+                return null;
+            }
+
+            // Convert from string to JSON
+            ddbEnergyObj = JSON.parse(ddbEnergyObj);
+            let { ddbEnergy, time } = ddbEnergyObj;
+
+            // Convert energy to a number
+            ddbEnergy = Number(ddbEnergy);
+
+            // Log invalid value, return null
+            if (isNaN(ddbEnergy)) {
+                console.error("Invalid value for ddbEnergy:", ddbEnergy);
+                return null;
+            }
+
+            if (regen) {
+                // Calculate amount of energy to regenerate,
+                // based on elapsed time since last energy update
+                const regenAmount = Math.floor(
+                    (Date.now() - time) / DDB_ENERGY_REGEN_TIME
+                );
+
+                // Add back to energy, capping at initial value
+                ddbEnergy = Math.min(
+                    INITIAL_DDB_ENERGY,
+                    ddbEnergy + regenAmount
+                );
+            }
+
+            // Return energy
+            return ddbEnergy;
+        } catch (error) {
+            console.error("Could not access localStorage:", error);
+        }
+    }
+
+    /**
+     * Sets ddbEnergy in local storage, renders changes
+     * @param {number} ddbEnergy
+     */
+    function setEnergy(ddbEnergy) {
+        // Save ddbEnergy and timestamp to local storage
+        try {
+            ddbEnergyObj = JSON.stringify({
+                ddbEnergy: ddbEnergy,
+                time: Date.now(),
+            });
+            localStorage.setItem("ddbEnergyObj", ddbEnergyObj);
+        } catch (error) {
+            console.error("Could not set localStorage:", error);
+        }
+
+        // Render changes via progress bar
+        renderEnergy(ddbEnergy);
     }
 
     function uuidv4() {
