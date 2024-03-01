@@ -219,12 +219,12 @@ document.addEventListener('DOMContentLoaded', () => {
             innerEnergyBar.classList.remove("bg-danger");
             innerEnergyBar.classList.add("bg-success");
         }
-        else if (percentage >= 50) {
+        else if (percentage >= 60) {
             innerEnergyBar.classList.remove("bg-success");
             innerEnergyBar.classList.remove("bg-warning");
             innerEnergyBar.classList.remove("bg-danger");
         }
-        else if (percentage < 50 && percentage > 20) {
+        else if (percentage < 60 && percentage > 30) {
             innerEnergyBar.classList.add("bg-warning");
             innerEnergyBar.classList.remove("bg-danger");
         }
