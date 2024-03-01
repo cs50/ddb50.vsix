@@ -84,7 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.help50.say.click', async(args) => {
             await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(async() => {
-                
+
                 // ensure provider.webViewGlobal is defined and has a webview
                 while (provider.webViewGlobal === undefined || provider.webViewGlobal?.webview === undefined) {
                     await new Promise(resolve => setTimeout(resolve, 100));
@@ -106,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.help50.ask.click', async(args) => {
             await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(async() => {
-                
+
                 // ensure provider.webViewGlobal is defined and has a webview
                 while (provider.webViewGlobal === undefined || provider.webViewGlobal?.webview === undefined) {
                     await new Promise(resolve => setTimeout(resolve, 100));
@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
             await vscode.commands.executeCommand("setContext", "ddb50:help50ask", false);
         })
     );
-    
+
     vscode.window.onDidCloseTerminal(async (terminal) => {
         help50_message = "";
         await vscode.commands.executeCommand("setContext", "ddb50:help50say", false);
@@ -315,6 +315,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'static', 'ddb.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'static', 'style.css'));
         const highlightjsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/highlight.min.js`));
+        const bootstrapStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/bootstrap/5.3.3/css/bootstrap.min.css`));
+        const bootstrapScriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/bootstrap/5.3.3/js/bootstrap.bundle.min.js`));
         let highlightStyleUri: vscode.Uri;
         let codeStyleUri: vscode.Uri;
 
@@ -338,6 +340,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="initial-scale=1.0, width=device-width">
+                    <link href="${bootstrapStyleUri}" rel="stylesheet">
                     <link href="${highlightStyleUri}" rel="stylesheet">
                     <link href="${codeStyleUri}" rel="stylesheet">
                     <link href="${styleUri}" rel="stylesheet">
@@ -348,12 +351,16 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                     </style>
                 </head>
                 <body>
+                    <div id="ddbOutterEnergyBar" class="progress" role="progressbar" aria-label="CS50 Duck Energy Bar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                        <div id="ddbInnerEnergyBar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                    </div>
                     <div id="ddbChatContainer">
                         <div id="ddbChatText"></div>
                         <div id="resizeHandle"></div>
                         <div id="ddbInput"><textarea placeholder="Ask a question"></textarea></div>
                     </div>
                 </body>
+                <script src="${bootstrapScriptUri}"></script>
                 <script src="${highlightjsUri}"></script>
                 <script src="${markdownItUri}"></script>
                 <script src="${scriptUri}"></script>
