@@ -1,5 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    const vscode = acquireVsCodeApi();
+    const textarea = document.querySelector('#ddbInput textarea');
+    const chatText = document.querySelector('#ddbChatText');
+    const disclaimer = "Quack. I am CS50's duck debugger (ddb), an experimental AI for [rubberducking](https://en.wikipedia.org/wiki/Rubber_duck_debugging). Quack quack. My replies might not always be accurate, so always think critically and let me know if you think that I've erred. Conversations are logged for debugging's sake. Quack quack quack.";
+
     // Set intial value for ddb's energy (1 energy point == 1 half heart)
     const INITIAL_DDB_ENERGY = 10;
 
@@ -16,11 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Allow one additional question every X minutes
     setInterval(() => increaseEnergy(1), DDB_ENERGY_REGEN_TIME);
-
-    const vscode = acquireVsCodeApi();
-    const textarea = document.querySelector('#ddbInput textarea');
-    const chatText = document.querySelector('#ddbChatText');
-    const disclaimer = "Quack. I am CS50's duck debugger (ddb), an experimental AI for [rubberducking](https://en.wikipedia.org/wiki/Rubber_duck_debugging). Quack quack. My replies might not always be accurate, so always think critically and let me know if you think that I've erred. Conversations are logged for debugging's sake. Quack quack quack.";
 
     const md = window.markdownit({
         highlight: function (str, lang) {
@@ -231,6 +231,23 @@ document.addEventListener('DOMContentLoaded', () => {
         else {
             innerEnergyBar.classList.add("bg-danger");
             innerEnergyBar.classList.remove("bg-warning");
+        }
+
+        if (percentage <= 0) {
+            textarea.setAttribute("disabled", "disabled");
+            innerEnergyBar.classList.add("progress-bar-striped");
+            innerEnergyBar.classList.add("progress-bar-animated");
+            innerEnergyBar.classList.remove("bg-danger");
+            innerEnergyBar.classList.add("bg-warning");
+            innerEnergyBar.style.width = `100%`;
+            outterEnergyBar.setAttribute("aria-valuenow", 100);
+            innerEnergyBar.innerHTML = "CS50 Duck is restoring stamina, please wait...";
+        }
+        else {
+            innerEnergyBar.classList.remove("progress-bar-striped");
+            innerEnergyBar.classList.remove("progress-bar-animated");
+            textarea.removeAttribute("disabled");
+            innerEnergyBar.innerHTML = "";
         }
     }
 
