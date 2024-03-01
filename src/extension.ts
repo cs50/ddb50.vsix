@@ -351,12 +351,12 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                     </style>
                 </head>
                 <body>
-                    <div id="ddbOutterEnergyBar" class="progress" role="progressbar" aria-label="CS50 Duck Energy Bar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
-                        <div id="ddbInnerEnergyBar" class="progress-bar" style="width: 100%"></div>
-                    </div>
                     <div id="ddbChatContainer">
                         <div id="ddbChatText"></div>
                         <div id="resizeHandle"></div>
+                        <div id="ddbOutterEnergyBar" class="progress" role="progressbar" aria-label="CS50 Duck Energy Bar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                            <div id="ddbInnerEnergyBar" class="progress-bar" style="width: 100%"></div>
+                        </div>
                         <div id="ddbInput"><textarea placeholder="Ask a question"></textarea></div>
                     </div>
                 </body>
