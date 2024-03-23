@@ -115,11 +115,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addMessage({ id = uuidv4(), text, fromDuck }, askGpt = true) {
+
+        // Temporary storage for code blocks
+        let codeBlocks = [];
+
+        // Replace code blocks with placeholders and store the original blocks
+        let tempText = text.replace(/```([\s\S]*?)```/g, function(match) {
+            codeBlocks.push(match);
+            return `<<<CODE_BLOCK_${codeBlocks.length - 1}>>>`;
+        });
+
+        // Replace spaces with &nbsp; outside of code blocks
+        let formattedText = tempText.replace(/ /g, '&nbsp;');
+
+        // Restore the original code blocks in place of the placeholders
+        formattedText = formattedText.replace(/<<<CODE_BLOCK_(\d+)>>>/g, function(match, index) {
+            return codeBlocks[index];
+        });
+
         const message =
             `<div class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
                 <span class="ddbChatBorder ${fromDuck ? 'ddbChatBorder-Duck' : 'ddbChatBorder-User'}"></span>
                 <span class="ddbAuthorName"><b>${(fromDuck ? 'ddb' : 'you')}</b></span>
-                <span id="id-${id}" class="ddbChatMessage">${fromDuck && askGpt ? '...' : md.render(text.replace(/\n/g, "  \n"))}</span>
+                <span id="id-${id}" class="ddbChatMessage">${fromDuck && askGpt ? '...' : md.render(formattedText.replace(/\n/g, "  \n"))}</span>
             </div>`;
         const parser = new DOMParser();
         const doc = parser.parseFromString(message, 'text/html');
