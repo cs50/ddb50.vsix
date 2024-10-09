@@ -177,17 +177,19 @@ export function activate(context: vscode.ExtensionContext) {
     // Expose ddb50 API to other extensions (e.g., style50)
     const api = {
         requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any) => {
-            provider.createDisplayMessage(displayMessage).then(() => {
-                setTimeout(() => {
-                    provider.getGptResponse(uuid.v4(), payload, contextMessage, false);
-                }, 1000);
+            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
+                provider.createDisplayMessage(displayMessage).then(() => {
+                    setTimeout(() => {
+                        provider.getGptResponse(uuid.v4(), payload, contextMessage, false);
+                    }, 500);
+                });
             });
         },
         requestDuckSay: async (message: string) => {
             await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
                 setTimeout(() => {
                     provider.webViewGlobal?.webview.postMessage({ command: 'say', content: { "userMessage": message } });
-                }, 1000);
+                }, 500);
             });
         }
     };
