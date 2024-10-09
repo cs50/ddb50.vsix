@@ -118,6 +118,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Expose ddb50 API to other extensions (e.g., style50)
     const api = {
         requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any) => {
+            if (!provider.webViewGlobal) {await new Promise((resolve) => setTimeout(resolve, 1000));}
             await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
                 provider.createDisplayMessage(displayMessage).then(() => {
                     setTimeout(() => {
@@ -127,6 +128,7 @@ export function activate(context: vscode.ExtensionContext) {
             });
         },
         requestDuckSay: async (message: string) => {
+            if (!provider.webViewGlobal) {await new Promise((resolve) => setTimeout(resolve, 1000));}
             await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
                 setTimeout(() => {
                     provider.webViewGlobal?.webview.postMessage({ command: 'say', content: { "userMessage": message } });
