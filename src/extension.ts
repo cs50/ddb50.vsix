@@ -182,6 +182,13 @@ export function activate(context: vscode.ExtensionContext) {
                     provider.getGptResponse(uuid.v4(), payload, contextMessage, false);
                 }, 1000);
             });
+        },
+        requestDuckSay: async (message: string) => {
+            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
+                setTimeout(() => {
+                    provider.webViewGlobal?.webview.postMessage({ command: 'say', content: { "userMessage": message } });
+                }, 100);
+            });
         }
     };
     return api;
