@@ -187,7 +187,7 @@ export function activate(context: vscode.ExtensionContext) {
             await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
                 setTimeout(() => {
                     provider.webViewGlobal?.webview.postMessage({ command: 'say', content: { "userMessage": message } });
-                }, 100);
+                }, 1000);
             });
         }
     };
@@ -246,7 +246,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                             "userMessage": message,
                         }
                     });
-            }, 100);
+            }, 1000);
         });
     }
 
