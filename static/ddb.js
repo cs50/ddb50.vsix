@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `<div class="ddbChat ${fromDuck ? 'ddbChat-Duck' : 'ddbChat-User'}">
                 <span class="ddbChatBorder ${fromDuck ? 'ddbChatBorder-Duck' : 'ddbChatBorder-User'}"></span>
                 <span class="ddbAuthorName"><b>${(fromDuck ? 'ddb' : 'you')}</b></span>
-                <span id="id-${id}" class="ddbChatMessage">${fromDuck && askGpt ? '...' : fromDuck ? md.render(text) : `<pre style="background-color: transparent; margin: 0; padding: 0; font-family: inherit; font-size: inherit; white-space: pre-wrap;">${text}</pre>`}</span>
+                <span id="id-${id}" class="ddbChatMessage">${fromDuck && askGpt ? '...' : fromDuck ? md.render(text) : `<pre style="background-color: transparent; margin: 0; padding: 0; font-family: inherit; font-size: inherit; white-space: pre-wrap;">${md.utils.escapeHtml(text)}</pre>`}</span>
             </div>`;
         const parser = new DOMParser();
         const doc = parser.parseFromString(message, 'text/html');
