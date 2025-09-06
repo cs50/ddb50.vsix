@@ -155,9 +155,6 @@ body.vscode-light #resizeHandle:hover {
     border-radius: 0 !important;
 }
 
-pre code {
-    white-space: pre-wrap !important;
-}
 
 [data-bs-theme=dark] pre {
     background-color: #0d1117;
@@ -167,4 +164,27 @@ pre code {
 [data-bs-theme=light] pre {
     background-color: #e0e0e0;
     padding: 10px;
+}
+
+/* Apply hljs styles to all code elements */
+body.vscode-dark code,
+[data-bs-theme=dark] code {
+    color: #c9d1d9;
+    background: #0d1117;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+body.vscode-light code,
+[data-bs-theme=light] code {
+    color: #ffffff;
+    background: #1b1b1b;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+pre code {
+    white-space: pre-wrap !important;
 }

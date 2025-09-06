@@ -309,7 +309,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
 
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'static', 'ddb.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'static', 'style.css'));
-        const highlightjsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/highlight.min.js`));
+        const highlightjsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.11.1/highlight.min.js`));
         const bootstrapStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/bootstrap/5.3.3/css/bootstrap.min.css`));
         const bootstrapScriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/bootstrap/5.3.3/js/bootstrap.bundle.min.js`));
         let highlightStyleUri: vscode.Uri;
@@ -319,10 +319,10 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         const isLightTheme = lightTheme.includes(vscode.window.activeColorTheme.kind);
         if (isLightTheme) {
             codeStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/css/light.css`));
-            highlightStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github.min.css`));
+            highlightStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.11.1/styles/a11y-light.css`));
         } else {
             codeStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/css/dark.css`));
-            highlightStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.7.0/styles/github-dark.min.css`));
+            highlightStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/highlightjs/11.11.1/styles/a11y-dark.css`));
         }
         const markdownItUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, `static/vendor/markdown-it/markdown-it.min.js`));
 
