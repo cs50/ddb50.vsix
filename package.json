@@ -7,7 +7,7 @@
     "publisher": "CS50",
     "repository": "https://github.com/cs50/ddb50.vsix",
     "engines": {
-        "vscode": "^1.107.0"
+        "vscode": "^1.120.0"
     },
     "categories": [
         "Education"
@@ -84,20 +84,26 @@
     "devDependencies": {
         "@types/mocha": "^10.0.10",
         "@types/node": "^25",
-        "@types/vscode": "^1.107.0",
-        "@typescript-eslint/eslint-plugin": "^8.51.0",
-        "@typescript-eslint/parser": "^8.51.0",
-        "eslint": "^9.39.2",
-        "glob": "^13.0.0",
+        "@types/vscode": "^1.120.0",
+        "@typescript-eslint/eslint-plugin": "^8.59.3",
+        "@typescript-eslint/parser": "^8.59.3",
+        "@vscode/test-electron": "^2.5.2",
+        "eslint": "^10.4.0",
+        "glob": "^13.0.6",
         "mocha": "^11.7.5",
-        "typescript": "^5.9.3",
-        "vscode-test": "^1.6.1"
+        "typescript": "^6.0.3"
     },
     "dependencies": {
-        "axios": "^1.13.2",
-        "markdown-it": "^14.1.0",
-        "markdown-it-highlightjs": "^4.2.0",
-        "minimatch": "10.1.1",
-        "uuid": "^13.0.0"
+        "axios": "^1.16.1",
+        "markdown-it": "^14.1.1",
+        "markdown-it-highlightjs": "^4.3.0",
+        "minimatch": "10.2.5",
+        "uuid": "^14.0.0"
+    },
+    "overrides": {
+        "mocha": {
+            "diff": "^8.0.3",
+            "serialize-javascript": "^7.0.5"
+        }
     }
 }
