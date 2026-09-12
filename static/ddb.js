@@ -75,7 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'enable_input':
                 textarea.removeAttribute('disabled');
                 textarea.focus();
-                setEnergy(getEnergy() - 1);
+
+                // Failed exchanges do not cost energy
+                if (message.consumeEnergy !== false) {
+                    setEnergy(getEnergy() - 1);
+                }
                 break;
 
             case 'persist_messages':

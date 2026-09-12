@@ -12,7 +12,55 @@ let gpt_messages_array: any = []; // Array of messages in the current session
 let thread_ts: string = "";  // thread_ts value for the current session
 let help50_message: string = ""; // help50 message for the current session
 
+// Output channel for troubleshooting (View > Output > "CS50 Duck")
+let outputChannel: vscode.OutputChannel;
+function log(message: string) {
+    const line = `[${new Date().toISOString()}] ${message}`;
+    console.log(line);
+    outputChannel?.appendLine(line);
+}
+
+// Tokens for authenticating with cs50.ai, in order of preference. CS50_TOKEN is written by
+// cs50.dev as a Codespaces secret; GITHUB_TOKEN is provided by Codespaces itself.
+const TOKEN_ENV_VARS = ['CS50_TOKEN', 'GITHUB_TOKEN'];
+interface Token { name: string; value: string; }
+function getTokens(): Token[] {
+    const tokens: Token[] = [];
+    for (const name of TOKEN_ENV_VARS) {
+        const value = (process.env[name] || '').replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+        if (value && !tokens.some(t => t.value === value)) {
+            tokens.push({ name, value });
+        }
+    }
+    return tokens;
+}
+
+// Extract the message from an error response body: JSON {"message": ...} or Werkzeug's HTML page
+function extractServerMessage(body: string): string {
+    const trimmed = body.trim();
+    if (!trimmed) {
+        return '';
+    }
+    try {
+        const json = JSON.parse(trimmed);
+        const message = json.message || json.description || json.error;
+        if (typeof message === 'string') {
+            return message;
+        }
+    } catch {
+        // not JSON
+    }
+    const paragraphs = [...trimmed.matchAll(/<p>([\s\S]*?)<\/p>/gi)].map(m => m[1].trim());
+    const text = (paragraphs.length ? paragraphs.join(' ') : trimmed.replace(/<[^>]+>/g, ' '))
+        .replace(/\s+/g, ' ').trim();
+    return text.length > 300 ? text.slice(0, 300) + '…' : text;
+}
+
 export function activate(context: vscode.ExtensionContext) {
+
+    outputChannel = vscode.window.createOutputChannel('CS50 Duck');
+    context.subscriptions.push(outputChannel);
+    log(`ddb50 activated; tokens available: ${getTokens().map(t => t.name).join(', ') || 'none'}`);
 
     // Register the ddb50 chat window
     const provider = new DDBViewProvider(context.extensionUri, context);
@@ -197,18 +245,29 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
 
     public getGptResponse(id: string, payload: any, contextMessage: string="", chat = true) {
 
+        // request timestamp in epoch time
+        const requestTimestamp = Date.now();
+
         try {
 
             // if input is too long, abort
             if (chat && payload.length > 10000 || contextMessage.length > 10000) {
                 this.webviewDeltaUpdate(id, 'Quack! Too much for me to handle. Please try again with a shorter message.\n');
-                this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
+                this.webViewGlobal!.webview.postMessage({ command: 'enable_input', consumeEnergy: false });
                 return;
             }
 
-            // request timestamp in epoch time
-            const requestTimestamp = Date.now();
+            // The duck only works where a token is available (i.e., inside a codespace)
+            const tokens = getTokens();
+            if (tokens.length === 0) {
+                log('No CS50_TOKEN or GITHUB_TOKEN in environment; cannot contact cs50.ai');
+                this.reportError(id,
+                    'No `CS50_TOKEN` or `GITHUB_TOKEN` was found in this environment, so I have no way to authenticate with cs50.ai.',
+                    'The CS50 Duck only works inside a CS50 codespace (https://cs50.dev). If you are in a codespace, log in again at https://cs50.dev, then fully stop and restart the codespace.');
+                return;
+            }
 
+            // Record the user's turn
             chat
             ? gpt_messages_array.push({ role: 'user', content: payload, timestamp: requestTimestamp })
             : gpt_messages_array.push({ role: 'user', content: contextMessage, timestamp: requestTimestamp });
@@ -219,18 +278,6 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
                     gpt_messages_array: gpt_messages_array
                 }
             );
-
-            const postOptions = {
-                method: 'POST',
-                host: 'cs50.ai',
-                port: 443,
-                path: chat ? '/api/v1/chat' : payload.api,
-                headers: {
-                    'Authorization': `Bearer ${(process.env['CS50_TOKEN'] || process.env['GITHUB_TOKEN'])!.replace(/[\x00-\x1F\x7F-\x9F]/g, "")}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 10000
-            };
 
             // ensure message only has "role" and "content" keys
             const payloadMessages = gpt_messages_array.map((message: any) => {
@@ -247,53 +294,197 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
             postData['thread_ts'] = thread_ts;
             postData = JSON.stringify(postData);
 
-            const postRequest = https.request(postOptions, (res: any) => {
+            const path = chat ? '/api/v1/chat' : payload.api;
+            this.sendRequest(id, path, postData, tokens, 0, requestTimestamp);
+        } catch (error: any) {
+            log(`Unexpected error preparing request: ${error?.stack || error}`);
+            this.recordFailure(requestTimestamp, '');
+            this.reportError(id, `Unexpected error: ${error?.message || error}`);
+        }
+    }
 
-                if (res.statusCode !== 200) {
-                    console.log(res.statusCode, res.statusMessage);
-                    this.webviewDeltaUpdate(id, 'Quack! I\'m having trouble connecting to the server. Please try again later.\n');
-                    this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
-                    return;
-                }
+    /**
+     * POST to cs50.ai with tokens[tokenIndex], falling back to the next token on 401/403.
+     */
+    private sendRequest(id: string, path: string, postData: string, tokens: Token[], tokenIndex: number, requestTimestamp: number) {
 
-                res.on('timeout', () => {
-                    console.log('Request timed out');
-                    console.log(res.statusCode, res.statusMessage);
-                    postRequest.abort();
-                    this.webviewDeltaUpdate(id, 'Quack! I\'m having trouble connecting to the server. Please try again later.\n');
-                    this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
-                    return;
-                });
+        const token = tokens[tokenIndex];
+        const attempt = `${token.name} (attempt ${tokenIndex + 1}/${tokens.length})`;
+        const triedTokens = tokens.slice(0, tokenIndex + 1).map(t => `\`${t.name}\``).join(', ');
 
-                let buffers: string = '';
-                res.on('data', (chunk: any) => {
+        // Inactivity timeout (reset by each streamed chunk). Kept above the 60s idle timeout of
+        // the load balancer and nginx so that a server-side stall yields its real status (e.g., 504).
+        const timeoutMs = 75000;
 
-                    // Check if this chunk contains thread_ts event data
-                    if (chunk.includes("event_thread_ts")) {
-                        thread_ts = chunk.toString().split(": ")[1];
-                    } else {
-                        buffers += chunk;
-                        this.webviewDeltaUpdate(id, buffers);
-                    }
-                });
+        const postOptions = {
+            method: 'POST',
+            host: 'cs50.ai',
+            port: 443,
+            path: path,
+            headers: {
+                'Authorization': `Bearer ${token.value}`,
+                'Content-Type': 'application/json'
+            },
+            timeout: timeoutMs
+        };
 
+        // Report each failure once; `buffers` keeps any partially streamed reply
+        let settled = false;
+        let buffers: string = '';
+        const fail = (detail: string, hint?: string) => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            log(`POST ${path} via ${attempt} failed: ${detail}`);
+            this.recordFailure(requestTimestamp, buffers);
+            this.reportError(id, detail, hint, buffers);
+        };
+
+        log(`POST ${path} via ${attempt}`);
+        const postRequest = https.request(postOptions, (res: any) => {
+
+            const status: number = res.statusCode;
+            const requestId = res.headers?.['x-request-id'] || res.headers?.['x-amzn-requestid'] || '';
+
+            if (status !== 200) {
+
+                // Read the body for the server's explanation
+                let body = '';
+                res.on('data', (chunk: any) => { body += chunk; });
                 res.on('end', () => {
-                    gpt_messages_array.push({ role: 'assistant', content: buffers, timestamp: requestTimestamp });
-                    this.webViewGlobal!.webview.postMessage(
-                        {
-                            command: 'persist_messages',
-                            gpt_messages_array: gpt_messages_array
-                        }
-                    );
-                    this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
+                    const serverMessage = extractServerMessage(body);
+                    log(`HTTP ${status} ${res.statusMessage || ''} via ${attempt}` +
+                        (requestId ? ` [request-id ${requestId}]` : '') +
+                        (serverMessage ? `: ${serverMessage}` : ''));
+
+                    // Authentication failed: try the next token
+                    if ((status === 401 || status === 403) && tokenIndex + 1 < tokens.length) {
+                        settled = true;
+                        log(`Falling back to ${tokens[tokenIndex + 1].name}`);
+                        this.sendRequest(id, path, postData, tokens, tokenIndex + 1, requestTimestamp);
+                        return;
+                    }
+
+                    let detail = `cs50.ai responded with **HTTP ${status}${res.statusMessage ? ' ' + res.statusMessage : ''}**`;
+                    if (serverMessage) {
+                        detail += ` — "${serverMessage}"`;
+                    }
+                    detail += ` (token${tokens.length > 1 ? 's' : ''} tried: ${triedTokens}`;
+                    if (requestId) {
+                        detail += `; request id \`${requestId}\``;
+                    }
+                    detail += ').';
+
+                    let hint: string;
+                    if (status === 401 || status === 403) {
+                        hint = 'cs50.ai could not verify your GitHub identity with the token(s) in this codespace. ' +
+                            'This usually means the token stored in your codespace is stale or your GitHub API rate limit is exhausted. ' +
+                            'Log in again at https://cs50.dev, then fully stop and restart (or rebuild) this codespace. ' +
+                            'If it keeps failing, wait an hour and try again.';
+                    } else if (status === 413) {
+                        hint = 'Your message is too long for me to handle. Please try again with a shorter message (under 10,000 characters).';
+                    } else if (status === 429) {
+                        hint = 'You are sending messages too quickly or the service is busy. Please wait a bit and try again.';
+                    } else if (status >= 500) {
+                        hint = 'cs50.ai is having a problem on its end. Please try again in a few minutes.';
+                    } else {
+                        hint = 'Please try again. If the problem persists, share this message with CS50 staff.';
+                    }
+                    fail(detail, hint);
                 });
+                res.on('error', (error: any) => fail(`Error reading HTTP ${status} response: ${error.message}`));
+                return;
+            }
+
+            res.on('data', (chunk: any) => {
+
+                // Check if this chunk contains thread_ts event data
+                if (chunk.includes("event_thread_ts")) {
+                    thread_ts = chunk.toString().split(": ")[1];
+                } else {
+                    buffers += chunk;
+                    this.webviewDeltaUpdate(id, buffers);
+                }
             });
 
-            postRequest.write(postData);
-            postRequest.end();
-        } catch (error: any) {
-            console.log(error);
+            res.on('error', (error: any) => {
+                fail(`Error while receiving the response from cs50.ai: ${error.message}`, 'Please try again.');
+            });
+
+            res.on('end', () => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                if (tokenIndex > 0) {
+                    log(`Request succeeded with fallback token ${token.name}; ${tokens[0].name} appears to be stale`);
+                }
+                gpt_messages_array.push({ role: 'assistant', content: buffers, timestamp: requestTimestamp });
+                this.webViewGlobal!.webview.postMessage(
+                    {
+                        command: 'persist_messages',
+                        gpt_messages_array: gpt_messages_array
+                    }
+                );
+                this.webViewGlobal!.webview.postMessage({ command: 'enable_input' });
+            });
+        });
+
+        // The 'timeout' option only arms the timer; the request must be destroyed explicitly
+        postRequest.on('timeout', () => {
+            postRequest.destroy(new Error(`No response from cs50.ai within ${timeoutMs / 1000} seconds`));
+        });
+
+        // DNS, connection, TLS, and timeout failures
+        postRequest.on('error', (error: any) => {
+            const code = error?.code ? ` (\`${error.code}\`)` : '';
+            let hint = 'Please try again in a moment.';
+            if (error?.code === 'ENOTFOUND' || error?.code === 'EAI_AGAIN') {
+                hint = 'The hostname cs50.ai could not be resolved. Check that this environment has network access.';
+            } else if (error?.code === 'ECONNREFUSED' || error?.code === 'ECONNRESET' || error?.code === 'ETIMEDOUT' || /within \d+ seconds/.test(error?.message || '')) {
+                hint = 'cs50.ai could not be reached from this environment. It may be temporarily down, or a firewall or proxy may be blocking the connection.';
+            } else if (/CERT|certificate|SSL|TLS/i.test(`${error?.code} ${error?.message}`)) {
+                hint = 'The TLS connection to cs50.ai failed certificate validation. A proxy or web filter (e.g., Zscaler) on this network may be intercepting HTTPS traffic; ask your network administrator to exempt cs50.ai from SSL inspection.';
+            }
+            fail(`Could not connect to cs50.ai${code}: ${error?.message || error}`, hint);
+        });
+
+        postRequest.write(postData);
+        postRequest.end();
+    }
+
+    /**
+     * Keep the history strictly alternating after a failure (the server's Bedrock backend requires
+     * it): keep a partial reply as the assistant turn, otherwise drop the unanswered user turn.
+     */
+    private recordFailure(requestTimestamp: number, partialReply: string) {
+        const last = gpt_messages_array[gpt_messages_array.length - 1];
+        if (last?.role === 'user' && last.timestamp === requestTimestamp) {
+            if (partialReply) {
+                gpt_messages_array.push({ role: 'assistant', content: partialReply, timestamp: requestTimestamp });
+            } else {
+                gpt_messages_array.pop();
+            }
+            this.webViewGlobal!.webview.postMessage({
+                command: 'persist_messages',
+                gpt_messages_array: gpt_messages_array
+            });
         }
+    }
+
+    /**
+     * Replace the pending "..." with a detailed error (after any partial reply) and re-enable input.
+     */
+    private reportError(id: string, detail: string, hint?: string, partialReply: string = '') {
+        let content = partialReply ? `${partialReply}\n\n---\n\n` : '';
+        content += `Quack! I couldn't get a response from cs50.ai.\n\n**What happened:** ${detail}\n`;
+        if (hint) {
+            content += `\n**What to try:** ${hint}\n`;
+        }
+        content += '\n*Details are also logged under View → Output → "CS50 Duck".*\n';
+        this.webviewDeltaUpdate(id, content);
+        this.webViewGlobal!.webview.postMessage({ command: 'enable_input', consumeEnergy: false });
     }
 
     private webviewDeltaUpdate(id: string, content: string) {
