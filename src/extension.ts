@@ -173,7 +173,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
     // 'ready'). Messages posted before that are silently dropped by the webview, which
     // is what happened to the first message on a cold start. Reset whenever the view is
     // (re)created, since VS Code disposes hidden webviews.
-    private ready: Promise<void>;
+    private ready!: Promise<void>; // Assigned by resetReady() in the constructor
     private markReady: () => void = () => {};
 
     constructor(
