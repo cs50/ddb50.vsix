@@ -180,6 +180,10 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         private readonly _extensionUri: vscode.Uri,
         private readonly context: vscode.ExtensionContext,
     ) {
+        this.resetReady();
+    }
+
+    private resetReady() {
         this.ready = new Promise((resolve) => { this.markReady = resolve; });
     }
 
@@ -207,10 +211,19 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         _token: vscode.CancellationToken,
     ) {
         // A fresh webview: not ready until its script says so
-        this.ready = new Promise((resolve) => { this.markReady = resolve; });
+        this.resetReady();
         webviewView.onDidDispose(() => {
             this.webViewGlobal = undefined;
-            this.ready = new Promise((resolve) => { this.markReady = resolve; });
+            this.resetReady();
+        }, undefined, this.context.subscriptions);
+
+        // Without retainContextWhenHidden, VS Code tears down the webview's content when
+        // the view is hidden and reloads it (re-running its scripts) when shown again, so
+        // readiness must be re-established after each hide
+        webviewView.onDidChangeVisibility(() => {
+            if (!webviewView.visible) {
+                this.resetReady();
+            }
         }, undefined, this.context.subscriptions);
 
         webviewView.webview.options = {
