@@ -90,6 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     restoreMessages();
 
+    // Tell the extension it's now safe to post messages (the listener above exists);
+    // before this, anything posted (e.g., by requestDuckSay) would be lost
+    vscode.postMessage({ command: 'ready' });
+
     function getGptResponse(id, message) {
         vscode.postMessage({
             command: 'get_gpt_response',

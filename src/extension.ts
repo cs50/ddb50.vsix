@@ -71,22 +71,14 @@ export function activate(context: vscode.ExtensionContext) {
     // Command: Ask a question in the ddb50 chat window
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.ask', async(args) => {
-            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
-                setTimeout(() => {
-                    provider.webViewGlobal?.webview.postMessage({ command: 'ask', content: { "userMessage": args[0] } });
-                }, 100);
-            });
+            await provider.send({ command: 'ask', content: { "userMessage": args[0] } });
         })
     );
 
     // Command: Have the duck say something in the ddb50 chat window
     context.subscriptions.push(
         vscode.commands.registerCommand('ddb50.say', async(args) => {
-            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
-                setTimeout(() => {
-                    provider.webViewGlobal?.webview.postMessage({ command: 'say', content: { "userMessage": args[0] } });
-                }, 100);
-            });
+            await provider.send({ command: 'say', content: { "userMessage": args[0] } });
         })
     );
 
@@ -96,11 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.showInformationMessage(
                 args[0], ...['Ask for Help', 'Dismiss']).then((selection) => {
                 if (selection === 'Ask for Help') {
-                    vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
-                        setTimeout(() => {
-                            provider.webViewGlobal?.webview.postMessage({ command: 'ask', content: { "userMessage": args[1] } });
-                        }, 100);
-                    });
+                    provider.send({ command: 'ask', content: { "userMessage": args[1] } });
                 }
             });
         })
@@ -163,25 +151,14 @@ export function activate(context: vscode.ExtensionContext) {
       })
     );
 
-    // Expose ddb50 API to other extensions (e.g., style50)
+    // Expose ddb50 API to other extensions (e.g., style50, help50)
     const api = {
         requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any) => {
-            if (!provider.webViewGlobal) {await new Promise((resolve) => setTimeout(resolve, 1000));}
-            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
-                provider.createDisplayMessage(displayMessage).then(() => {
-                    setTimeout(() => {
-                        provider.getGptResponse(uuid.v4(), payload, contextMessage, false);
-                    }, 500);
-                });
-            });
+            await provider.createDisplayMessage(displayMessage);
+            provider.getGptResponse(uuid.v4(), payload, contextMessage, false);
         },
         requestDuckSay: async (message: string) => {
-            if (!provider.webViewGlobal) {await new Promise((resolve) => setTimeout(resolve, 1000));}
-            await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
-                setTimeout(() => {
-                    provider.webViewGlobal?.webview.postMessage({ command: 'say', content: { "userMessage": message } });
-                }, 500);
-            });
+            await provider.send({ command: 'say', content: { "userMessage": message } });
         }
     };
     return api;
@@ -192,16 +169,50 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewId = 'ddb50.chatWindow';
     public webViewGlobal: vscode.WebviewView | undefined;
 
+    // Resolves once the webview's script has registered its message listener (it posts
+    // 'ready'). Messages posted before that are silently dropped by the webview, which
+    // is what happened to the first message on a cold start. Reset whenever the view is
+    // (re)created, since VS Code disposes hidden webviews.
+    private ready: Promise<void>;
+    private markReady: () => void = () => {};
+
     constructor(
         private readonly _extensionUri: vscode.Uri,
         private readonly context: vscode.ExtensionContext,
-    ) { }
+    ) {
+        this.ready = new Promise((resolve) => { this.markReady = resolve; });
+    }
+
+    // Reveal the view and wait (bounded) for it to be ready to receive messages
+    public async whenReady(timeoutMs = 10000): Promise<vscode.WebviewView | undefined> {
+        await vscode.commands.executeCommand('ddb50.chatWindow.focus');
+        const timeout = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
+        await Promise.race([this.ready, timeout]);
+        return this.webViewGlobal;
+    }
+
+    // Focus the view, wait for it to be ready, then post a message to it
+    public async send(message: any): Promise<boolean> {
+        const view = await this.whenReady();
+        if (!view) {
+            log(`Webview not ready; dropping message ${JSON.stringify(message).slice(0, 80)}`);
+            return false;
+        }
+        return await view.webview.postMessage(message);
+    }
 
     public resolveWebviewView(
         webviewView: vscode.WebviewView,
         _context: vscode.WebviewViewResolveContext,
         _token: vscode.CancellationToken,
     ) {
+        // A fresh webview: not ready until its script says so
+        this.ready = new Promise((resolve) => { this.markReady = resolve; });
+        webviewView.onDidDispose(() => {
+            this.webViewGlobal = undefined;
+            this.ready = new Promise((resolve) => { this.markReady = resolve; });
+        }, undefined, this.context.subscriptions);
+
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [this._extensionUri]
@@ -209,6 +220,10 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
+                    case 'ready':
+                        this.markReady();
+                        return;
+
                     case 'reset_history':
                         gpt_messages_array = [];
                         return;
@@ -230,16 +245,11 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
     }
 
     public async createDisplayMessage(message: string) {
-        await vscode.commands.executeCommand('ddb50.chatWindow.focus').then(() => {
-            setTimeout(() => {
-                this.webViewGlobal!.webview.postMessage(
-                    {
-                        command: 'addMessage',
-                        content: {
-                            "userMessage": message,
-                        }
-                    });
-            }, 1000);
+        await this.send({
+            command: 'addMessage',
+            content: {
+                "userMessage": message,
+            }
         });
     }
 
