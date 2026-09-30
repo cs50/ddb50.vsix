@@ -151,14 +151,18 @@ export function activate(context: vscode.ExtensionContext) {
       })
     );
 
-    // Expose ddb50 API to other extensions (e.g., style50, help50)
+    // Expose ddb50 API to other extensions (e.g., style50, help50). Both calls resolve to
+    // whether the message reached the webview, so callers can react when the duck is unavailable.
     const api = {
-        requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any) => {
-            await provider.createDisplayMessage(displayMessage);
+        requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any): Promise<boolean> => {
+            if (!await provider.createDisplayMessage(displayMessage)) {
+                return false;
+            }
             provider.getGptResponse(uuid.v4(), payload, contextMessage, false);
+            return true;
         },
-        requestDuckSay: async (message: string) => {
-            await provider.send({ command: 'say', content: { "userMessage": message } });
+        requestDuckSay: async (message: string): Promise<boolean> => {
+            return await provider.send({ command: 'say', content: { "userMessage": message } });
         }
     };
     return api;
@@ -169,29 +173,35 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewId = 'ddb50.chatWindow';
     public webViewGlobal: vscode.WebviewView | undefined;
 
-    // Resolves once the webview's script has registered its message listener (it posts
-    // 'ready'). Messages posted before that are silently dropped by the webview, which
-    // is what happened to the first message on a cold start. Reset whenever the view is
-    // (re)created, since VS Code disposes hidden webviews.
-    private ready!: Promise<void>; // Assigned by resetReady() in the constructor
-    private markReady: () => void = () => {};
+    // Whether the webview's script has registered its message listener (it posts 'ready').
+    // Messages posted before that are silently dropped by the webview. Cleared whenever the
+    // view is hidden or disposed, since VS Code tears down and later reloads its content.
+    // Waiters subscribe to the event rather than to a promise instance, so that a webview
+    // created after a wait began (the cold-start case) still wakes the waiter.
+    private isReady = false;
+    private readonly becameReady = new vscode.EventEmitter<void>();
 
     constructor(
         private readonly _extensionUri: vscode.Uri,
         private readonly context: vscode.ExtensionContext,
     ) {
-        this.resetReady();
+        context.subscriptions.push(this.becameReady);
     }
 
-    private resetReady() {
-        this.ready = new Promise((resolve) => { this.markReady = resolve; });
-    }
-
-    // Reveal the view and wait (bounded) for it to be ready to receive messages
+    // Reveal the view and wait (bounded) for it to be ready to receive messages. Resolves to
+    // undefined if the webview did not become ready in time, so callers do not post into it.
     public async whenReady(timeoutMs = 10000): Promise<vscode.WebviewView | undefined> {
         await vscode.commands.executeCommand('ddb50.chatWindow.focus');
-        const timeout = new Promise<void>((resolve) => setTimeout(resolve, timeoutMs));
-        await Promise.race([this.ready, timeout]);
+        if (!this.isReady) {
+            await new Promise<void>((resolve) => {
+                const timer = setTimeout(() => { listener.dispose(); resolve(); }, timeoutMs);
+                const listener = this.becameReady.event(() => { clearTimeout(timer); listener.dispose(); resolve(); });
+            });
+            if (!this.isReady) {
+                log(`Webview did not report ready within ${timeoutMs} ms`);
+                return undefined;
+            }
+        }
         return this.webViewGlobal;
     }
 
@@ -211,10 +221,10 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         _token: vscode.CancellationToken,
     ) {
         // A fresh webview: not ready until its script says so
-        this.resetReady();
+        this.isReady = false;
         webviewView.onDidDispose(() => {
             this.webViewGlobal = undefined;
-            this.resetReady();
+            this.isReady = false;
         }, undefined, this.context.subscriptions);
 
         // Without retainContextWhenHidden, VS Code tears down the webview's content when
@@ -222,7 +232,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         // readiness must be re-established after each hide
         webviewView.onDidChangeVisibility(() => {
             if (!webviewView.visible) {
-                this.resetReady();
+                this.isReady = false;
             }
         }, undefined, this.context.subscriptions);
 
@@ -234,7 +244,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
             message => {
                 switch (message.command) {
                     case 'ready':
-                        this.markReady();
+                        this.isReady = true;
+                        this.becameReady.fire();
                         return;
 
                     case 'reset_history':
@@ -257,8 +268,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         this.webViewGlobal = webviewView;
     }
 
-    public async createDisplayMessage(message: string) {
-        await this.send({
+    public async createDisplayMessage(message: string): Promise<boolean> {
+        return await this.send({
             command: 'addMessage',
             content: {
                 "userMessage": message,
