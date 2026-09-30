@@ -151,14 +151,18 @@ export function activate(context: vscode.ExtensionContext) {
       })
     );
 
-    // Expose ddb50 API to other extensions (e.g., style50, help50)
+    // Expose ddb50 API to other extensions (e.g., style50, help50). Both calls resolve to
+    // whether the message reached the webview, so callers can react when the duck is unavailable.
     const api = {
-        requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any) => {
-            await provider.createDisplayMessage(displayMessage);
+        requestGptResponse: async (displayMessage: string, contextMessage: string, payload: any): Promise<boolean> => {
+            if (!await provider.createDisplayMessage(displayMessage)) {
+                return false;
+            }
             provider.getGptResponse(uuid.v4(), payload, contextMessage, false);
+            return true;
         },
-        requestDuckSay: async (message: string) => {
-            await provider.send({ command: 'say', content: { "userMessage": message } });
+        requestDuckSay: async (message: string): Promise<boolean> => {
+            return await provider.send({ command: 'say', content: { "userMessage": message } });
         }
     };
     return api;
@@ -169,10 +173,6 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
     public static readonly viewId = 'ddb50.chatWindow';
     public webViewGlobal: vscode.WebviewView | undefined;
 
-    // Resolves once the webview's script has registered its message listener (it posts
-    // 'ready'). Messages posted before that are silently dropped by the webview, which
-    // is what happened to the first message on a cold start. Reset whenever the view is
-    // (re)created, since VS Code disposes hidden webviews.
     // Whether the webview's script has registered its message listener (it posts 'ready').
     // Messages posted before that are silently dropped by the webview. Cleared whenever the
     // view is hidden or disposed, since VS Code tears down and later reloads its content.
@@ -188,7 +188,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         context.subscriptions.push(this.becameReady);
     }
 
-    // Reveal the view and wait (bounded) for it to be ready to receive messages
+    // Reveal the view and wait (bounded) for it to be ready to receive messages. Resolves to
+    // undefined if the webview did not become ready in time, so callers do not post into it.
     public async whenReady(timeoutMs = 10000): Promise<vscode.WebviewView | undefined> {
         await vscode.commands.executeCommand('ddb50.chatWindow.focus');
         if (!this.isReady) {
@@ -198,6 +199,7 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
             });
             if (!this.isReady) {
                 log(`Webview did not report ready within ${timeoutMs} ms`);
+                return undefined;
             }
         }
         return this.webViewGlobal;
@@ -266,8 +268,8 @@ class DDBViewProvider implements vscode.WebviewViewProvider {
         this.webViewGlobal = webviewView;
     }
 
-    public async createDisplayMessage(message: string) {
-        await this.send({
+    public async createDisplayMessage(message: string): Promise<boolean> {
+        return await this.send({
             command: 'addMessage',
             content: {
                 "userMessage": message,
